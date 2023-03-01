@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  dbaas_dev:
+    container_name: dbaas_dev
+    build:
+      context: .
+    working_dir: /extension
+    command: cextrun -d
+    volumes: 
+      - .:/extension
+    env_file:
+      - .dbaas_dev.env
+
+  dbaas_bash:
+    container_name: dbaas_bash
+    build:
+      context: .
+    working_dir: /extension
+    command: /bin/bash
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/extension
+    env_file:
+      - .dbaas_dev.env
+
+  db_ram:
+    image: mongo:5
+    restart: always
+    tmpfs:
+      - /data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 1q2w3e
+
+  dbaas_test:
+    container_name: dbaas_test
+    build:
+      context: .
+    working_dir: /extension
+    command: extension-test
+    volumes:
+      - .:/extension
+    env_file:
+      - .dbaas_dev.env
+    depends_on:
+      - db_ram
