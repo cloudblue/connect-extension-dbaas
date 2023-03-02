@@ -1,6 +1,6 @@
 
 /*
-Copyright (c) 2023, CloudBlue Connect
+Copyright (c) 2023, Ingram Micro
 All rights reserved.
 */
 // API calls to the backend

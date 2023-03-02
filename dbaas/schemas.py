@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2023, CloudBlue Connect
+# Copyright (c) 2023, Ingram Micro
 # All rights reserved.
 #
+
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
+
+from dbaas.constants import DBWorkload
 
 
 class Ref(BaseModel):
@@ -19,7 +22,7 @@ class InnerRefOut(Ref):
 class DatabaseIn(BaseModel):
     name: str = Field(..., max_length=128)
     description: str = Field(..., max_length=512)
-    workload: Literal['small', 'medium', 'large']
+    workload: Literal[DBWorkload.all()]
     tech_contact: Ref
     region: Ref
 

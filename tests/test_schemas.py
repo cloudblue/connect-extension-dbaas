@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2023, Ingram Micro
+# All rights reserved.
+#
+
 import pytest
 
 from dbaas.schemas import DatabaseIn
@@ -19,7 +25,7 @@ from dbaas.schemas import DatabaseIn
         'region': {'id': 'us-central'},
     },
 ])
-def test_db_in__ok(data):
+def test_database_in_ok(data):
     assert DatabaseIn(**data)
 
 
@@ -59,6 +65,6 @@ def test_db_in__ok(data):
         'region': {'id': 'region'},
     },
 ])
-def test_db_in__fail(data):
+def test_database_in_fail(data):
     with pytest.raises(ValueError):
         DatabaseIn(**data)
