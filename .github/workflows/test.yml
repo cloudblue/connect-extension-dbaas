@@ -15,6 +15,14 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.10']
+    services:
+      mongo:
+        image: mongo:5
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: 1q2w3e
     steps:
       - uses: actions/checkout@v3
         with:
@@ -35,6 +43,8 @@ jobs:
       - name: Testing
         run: |
           pytest
+        env:
+          DB_HOST: localhost
 
   frontend:
     runs-on: ubuntu-latest

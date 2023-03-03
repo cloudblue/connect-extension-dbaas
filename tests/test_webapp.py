@@ -15,7 +15,7 @@ from tests.utils import ANYContext
 
 
 @pytest.mark.asyncio
-async def test_on_start(test_client_factory, config, mocker):
+async def test_on_start(mocker):
     p = mocker.patch('dbaas.webapp.prepare_db')
 
     await DBaaSWebApplication().on_startup(1, 2)
@@ -23,7 +23,7 @@ async def test_on_start(test_client_factory, config, mocker):
     p.assert_called_once_with(1, 2)
 
 
-def test_list_databases_empty_list(api_client, mocker):
+def test_list_databases_is_empty(api_client, mocker):
     p = mocker.patch('dbaas.webapp.DB.list', return_value=[])
 
     response = api_client.get('/api/v1/databases')
@@ -33,7 +33,7 @@ def test_list_databases_empty_list(api_client, mocker):
     p.assert_called_once_with('db', ANYContext)
 
 
-def test_list_databases_several_results(api_client, mocker):
+def test_list_databases_several_dbs(api_client, mocker):
     db_documents = DBFactory.create_batch(2, account_id='VA-123')
     p = mocker.patch('dbaas.webapp.DB.list', return_value=db_documents)
 

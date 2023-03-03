@@ -29,7 +29,6 @@ class DatabaseIn(BaseModel):
 
 class DatabaseOutList(DatabaseIn):
     id: str
-    tech_contact: Ref
     region: InnerRefOut
     status: str
     case: Optional[Ref] = None
@@ -37,7 +36,7 @@ class DatabaseOutList(DatabaseIn):
 
 
 class DatabaseOutDetail(DatabaseOutList):
-    access: Optional[dict] = None
+    credentials: Optional[dict] = None
 
 
 RegionOut = InnerRefOut

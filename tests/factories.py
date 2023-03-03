@@ -3,6 +3,7 @@
 # Copyright (c) 2023, Ingram Micro
 # All rights reserved.
 #
+
 from datetime import datetime
 
 import factory
@@ -34,7 +35,7 @@ class DBFactory(factory.DictFactory):
     tech_contact = factory.SubFactory(UserFactory)
     cases = factory.List([])
 
-    access = factory.Dict({
+    credentials = factory.Dict({
         'host': factory.Faker('hostname'),
         'username': factory.Faker('user_name'),
         'password': factory.Faker('password'),

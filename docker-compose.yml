@@ -39,7 +39,7 @@ services:
     build:
       context: .
     working_dir: /extension
-    command: bash -c 'poetry install && poetry run -q pytest -vv'
+    command: extension-test
     volumes:
       - .:/extension
     env_file:
