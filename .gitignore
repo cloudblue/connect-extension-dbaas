@@ -1,0 +1,8 @@
+*.pyc
+htmlcov
+.coverage
+coverage.xml
+.dbaas_dev.env
+node_modules
+ui/tests/coverage
+.pytest_cache
