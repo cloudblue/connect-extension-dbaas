@@ -11,6 +11,10 @@ from pydantic import BaseModel, Field
 from dbaas.constants import DBWorkload
 
 
+class JsonError(BaseModel):
+    message: str
+
+
 class Ref(BaseModel):
     id: str = Field(..., max_length=32)
 
@@ -27,6 +31,7 @@ class DatabaseIn(BaseModel):
     region: Ref
 
 
+# TODO: Fix tech_contact
 class DatabaseOutList(DatabaseIn):
     id: str
     region: InnerRefOut

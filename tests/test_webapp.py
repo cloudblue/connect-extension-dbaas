@@ -63,7 +63,7 @@ def test_retrieve_database_404(api_client, mocker):
 
     response = api_client.get('/api/v1/databases/DB-123')
     assert response.status_code == 404
-    assert response.json() == {'detail': 'Database not found'}
+    assert response.json() == {'message': 'Database not found.'}
 
     p.assert_called_once_with('DB-123', 'db', ANYContext)
 

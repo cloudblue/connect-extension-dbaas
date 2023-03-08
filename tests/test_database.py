@@ -89,11 +89,14 @@ async def test_prepare_db_collection_is_created(config, patch_connection_string)
 
 
 @pytest.mark.asyncio
-async def test_prepare_db_collection_exists(db, logger):
+async def test_prepare_db_collection_exists(config, db, logger):
     logger.reset_mock()
 
-    result = await prepare_db_collection(db, logger)
-    assert result is None
+    db_name = config[DBEnvVar.DB]
+    coll_name = Collections.DB
+
+    collection = await prepare_db_collection(db, logger)
+    assert collection.full_name == f'{db_name}.{coll_name}'
 
     logger.info.assert_called_once_with('Collection %s already exists.', Collections.DB)
 
@@ -111,10 +114,13 @@ async def test_prepare_region_collection_is_created(config, patch_connection_str
 
 
 @pytest.mark.asyncio
-async def test_prepare_region_collection_exists(db, logger):
+async def test_prepare_region_collection_exists(config, db, logger):
     logger.reset_mock()
 
-    result = await prepare_region_collection(db, logger)
-    assert result is None
+    db_name = config[DBEnvVar.DB]
+    coll_name = Collections.REGION
+
+    collection = await prepare_region_collection(db, logger)
+    assert collection.full_name == f'{db_name}.{coll_name}'
 
     logger.info.assert_called_once_with('Collection %s already exists.', Collections.REGION)

@@ -4,9 +4,9 @@
 # All rights reserved.
 #
 
+import asyncio
 import urllib
 from logging import LoggerAdapter
-from typing import Optional
 
 from connect.eaas.core.inject.common import get_config
 from fastapi import Depends
@@ -60,29 +60,37 @@ def validate_db_configuration(config: dict):
 async def prepare_db_collection(
     db: AsyncIOMotorDatabase,
     logger: LoggerAdapter,
-) -> Optional[AsyncIOMotorCollection]:
+) -> AsyncIOMotorCollection:
     coll_name = Collections.DB
 
     try:
         collection = await db.create_collection(coll_name)
-        return collection
 
     except CollectionInvalid:
         _log_that_collection_exists(logger, coll_name)
+        collection = db[coll_name]
+
+    asyncio.ensure_future(collection.create_index('id', unique=True))
+
+    return collection
 
 
 async def prepare_region_collection(
     db: AsyncIOMotorDatabase,
     logger: LoggerAdapter,
-) -> Optional[AsyncIOMotorCollection]:
+) -> AsyncIOMotorCollection:
     coll_name = Collections.REGION
 
     try:
         collection = await db.create_collection(coll_name)
-        return collection
 
     except CollectionInvalid:
         _log_that_collection_exists(logger, coll_name)
+        collection = db[coll_name]
+
+    asyncio.ensure_future(collection.create_index('id', unique=True))
+
+    return collection
 
 
 def _log_that_collection_exists(logger: LoggerAdapter, coll_name: str):
