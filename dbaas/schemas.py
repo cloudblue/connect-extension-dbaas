@@ -15,33 +15,41 @@ class JsonError(BaseModel):
     message: str
 
 
-class Ref(BaseModel):
+class RefIn(BaseModel):
     id: str = Field(..., max_length=32)
 
 
-class InnerRefOut(Ref):
+BaseRefOut = RefIn
+
+
+class RefOut(BaseRefOut):
     name: Optional[str] = None
+
+
+class TechContactOut(RefOut):
+    email: str
 
 
 class DatabaseIn(BaseModel):
     name: str = Field(..., max_length=128)
     description: str = Field(..., max_length=512)
     workload: Literal[DBWorkload.all()]
-    tech_contact: Ref
-    region: Ref
+    tech_contact: RefIn
+    region: RefIn
 
 
-# TODO: Fix tech_contact
 class DatabaseOutList(DatabaseIn):
     id: str
-    region: InnerRefOut
+    region: RefOut
+    tech_contact: RefOut
     status: str
-    case: Optional[Ref] = None
+    case: Optional[RefIn] = None
     events: Optional[dict] = None
 
 
 class DatabaseOutDetail(DatabaseOutList):
+    tech_contact: TechContactOut
     credentials: Optional[dict] = None
 
 
-RegionOut = InnerRefOut
+RegionOut = RefOut

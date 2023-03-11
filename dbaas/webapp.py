@@ -12,7 +12,7 @@ from connect.eaas.core.decorators import (
     web_app,
 )
 from connect.eaas.core.extension import WebApplicationBase
-from connect.eaas.core.inject.asynchronous import AsyncConnectClient, get_installation_client
+from connect.eaas.core.inject.asynchronous import AsyncConnectClient
 from connect.eaas.core.inject.common import get_call_context, get_config
 from connect.eaas.core.inject.models import Context
 from fastapi import Depends, responses
@@ -20,6 +20,7 @@ from fastapi import Depends, responses
 from dbaas.database import get_db, prepare_db
 from dbaas.schemas import DatabaseIn, DatabaseOutDetail, DatabaseOutList, JsonError, RegionOut
 from dbaas.services import DB, Region
+from dbaas.utils import get_installation_client
 
 
 @web_app(router)
@@ -45,6 +46,7 @@ class DBaaSWebApplication(WebApplicationBase):
         summary='Create database',
         response_model=DatabaseOutList,
         responses={400: {'model': JsonError}},
+        status_code=201,
     )
     async def create_database(
         self,
