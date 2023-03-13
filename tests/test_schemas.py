@@ -8,9 +8,50 @@ import pytest
 from fastapi.encoders import jsonable_encoder
 
 from dbaas.constants import DBStatus, DBWorkload
-from dbaas.schemas import DatabaseIn, DatabaseOutDetail, DatabaseOutList, RegionOut
+from dbaas.schemas import (
+    DatabaseInCreate,
+    DatabaseInUpdate,
+    DatabaseOutDetail,
+    DatabaseOutList,
+    RegionOut,
+)
 
 from tests.factories import CaseFactory, DBFactory, RegionFactory
+
+
+@pytest.mark.parametrize('data', [
+    {},
+    {
+        'name': None,
+        'description': None,
+        'tech_contact': None,
+    },
+    {'name': 'test'},
+    {
+        'name': 'x' * 128,
+        'description': 'y' * 512,
+        'tech_contact': {'id': 'U' * 32, 'name': 'user'},
+        'workload': 'invalid',
+    },
+])
+def test_database_in_update_ok(data):
+    assert DatabaseInUpdate(**data)
+
+
+@pytest.mark.parametrize('data', [
+    {
+        'name': None,
+        'description': None,
+        'tech_contact': {'id': None},
+    },
+    {
+        'name': 'x' * 129,
+        'description': 'y' * 513,
+    },
+])
+def test_database_in_update_fail(data):
+    with pytest.raises(ValueError):
+        DatabaseInUpdate(**data)
 
 
 @pytest.mark.parametrize('data', [
@@ -29,8 +70,8 @@ from tests.factories import CaseFactory, DBFactory, RegionFactory
         'region': {'id': 'us-central'},
     },
 ])
-def test_database_in_ok(data):
-    assert DatabaseIn(**data)
+def test_database_in_create_ok(data):
+    assert DatabaseInCreate(**data)
 
 
 @pytest.mark.parametrize('data', [
@@ -69,9 +110,9 @@ def test_database_in_ok(data):
         'region': {'id': 'region'},
     },
 ])
-def test_database_in_fail(data):
+def test_database_in_create_fail(data):
     with pytest.raises(ValueError):
-        DatabaseIn(**data)
+        DatabaseInCreate(**data)
 
 
 def test_database_out_list():

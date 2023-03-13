@@ -15,13 +15,14 @@ from pymongo.errors import WriteError
 
 from dbaas.constants import DBStatus
 from dbaas.database import Collections
+from dbaas.schemas import DatabaseInUpdate
 from dbaas.services import DB
 
 from tests.factories import DBFactory, RegionFactory, UserFactory
 
 
 @pytest.mark.asyncio
-async def test_db_list_collection_is_empty(db, admin_context):
+async def test_list_collection_is_empty(db, admin_context):
     results = await DB.list(db, Context(account_id='VA-123-456'))
     assert results == []
 
@@ -30,8 +31,8 @@ async def test_db_list_collection_is_empty(db, admin_context):
 
 
 @pytest.mark.asyncio
-async def test_db_list_no_account_dbs(db, admin_context):
-    db[Collections.DB].insert_many(DBFactory.create_batch(2))
+async def test_list_no_account_dbs(db, admin_context):
+    await db[Collections.DB].insert_many(DBFactory.create_batch(2))
 
     results = await DB.list(db, Context(account_id='PA-000-000'))
     assert results == []
@@ -60,12 +61,12 @@ async def test_db_list_no_account_dbs(db, admin_context):
         {'status': DBStatus.RECONFIGURING, 'credentials': {1: True}},
     ),
 ))
-def test_db__db_document_repr(in_doc, out_doc):
+def test__db_document_repr(in_doc, out_doc):
     assert DB._db_document_repr(in_doc) == out_doc
 
 
 @pytest.mark.asyncio
-async def test_db_list_several_account_dbs(db, admin_context):
+async def test_list_several_account_dbs(db, admin_context):
     account_id = 'PA-456'
 
     db1 = DBFactory(account_id=account_id, status=DBStatus.REVIEWING)
@@ -73,7 +74,7 @@ async def test_db_list_several_account_dbs(db, admin_context):
     other_account_db = DBFactory(account_id='VA-700')
     db2 = DBFactory(account_id=account_id, status=DBStatus.ACTIVE)
     db3 = DBFactory(account_id=account_id, status=DBStatus.RECONFIGURING)
-    db[Collections.DB].insert_many([deleted_db, other_account_db, db2, db1, db3])
+    await db[Collections.DB].insert_many([deleted_db, other_account_db, db2, db1, db3])
 
     results = await DB.list(db, Context(account_id=account_id))
     assert len(results) == 3
@@ -85,25 +86,25 @@ async def test_db_list_several_account_dbs(db, admin_context):
 
 
 @pytest.mark.asyncio
-async def test_db_retrieve_is_empty(db):
+async def test_retrieve_is_empty(db):
     result = await DB.retrieve('any', db, Context(account_id='VA-123-456'))
 
     assert result is None
 
 
 @pytest.mark.asyncio
-async def test_db_retrieve_is_from_other_account(db):
+async def test_retrieve_is_from_other_account(db):
     db1 = DBFactory()
-    db[Collections.DB].insert_one(db1)
+    await db[Collections.DB].insert_one(db1)
 
     result = await DB.retrieve(db1['id'], db, Context(account_id='PA-000-000'))
     assert result is None
 
 
 @pytest.mark.asyncio
-async def test_db_retrieve_is_deleted(db):
+async def test_retrieve_is_deleted(db):
     db1 = DBFactory(status=DBStatus.DELETED)
-    db[Collections.DB].insert_one(db1)
+    await db[Collections.DB].insert_one(db1)
 
     result = await DB.retrieve(db1['id'], db, Context(account_id=db1['account_id']))
     assert result is None
@@ -111,16 +112,16 @@ async def test_db_retrieve_is_deleted(db):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('status', (DBStatus.RECONFIGURING, DBStatus.ACTIVE, DBStatus.REVIEWING))
-async def test_db_retrieve_is_found(db, status):
+async def test_retrieve_is_found(db, status):
     db1 = DBFactory(status=status)
-    db[Collections.DB].insert_one(db1)
+    await db[Collections.DB].insert_one(db1)
 
     result = await DB.retrieve(db1['id'], db, Context(account_id=db1['account_id']))
     assert result['id'] == db1['id']
 
 
 @pytest.mark.asyncio
-async def test_db__get_validated_region_document_valid_region(mocker):
+async def test__get_validated_region_document_valid_region(mocker):
     region = RegionFactory()
     p = mocker.patch('dbaas.services.Region.retrieve', return_value=region)
 
@@ -131,7 +132,7 @@ async def test_db__get_validated_region_document_valid_region(mocker):
 
 
 @pytest.mark.asyncio
-async def test_db__get_validated_region_document_not_found(mocker):
+async def test__get_validated_region_document_not_found(mocker):
     p = mocker.patch('dbaas.services.Region.retrieve', return_value=None)
 
     with pytest.raises(ValueError) as e:
@@ -142,7 +143,7 @@ async def test_db__get_validated_region_document_not_found(mocker):
 
 
 @pytest.mark.asyncio
-async def test_db__get_validated_tech_contact_client_error(mocker):
+async def test__get_validated_tech_contact_client_error(mocker):
     def raise_err(*a, **kw):
         raise ClientError(status_code=404)
 
@@ -159,7 +160,7 @@ async def test_db__get_validated_tech_contact_client_error(mocker):
 
 
 @pytest.mark.asyncio
-async def test_db__get_validated_tech_contact_is_inactive(mocker):
+async def test__get_validated_tech_contact_is_inactive(mocker):
     p = mocker.patch(
         'dbaas.services.ConnectAccountUser.retrieve',
         AsyncMock(return_value={'id': 'UR-123-456', 'active': False}),
@@ -178,7 +179,7 @@ async def test_db__get_validated_tech_contact_is_inactive(mocker):
 
 
 @pytest.mark.asyncio
-async def test_db__get_validated_tech_contact_valid_contact(async_client_mocker_factory, mocker):
+async def test__get_validated_tech_contact_valid_contact(async_client_mocker_factory, mocker):
     user = UserFactory()
     p = mocker.patch('dbaas.services.ConnectAccountUser.retrieve', AsyncMock(return_value=user))
 
@@ -194,7 +195,7 @@ async def test_db__get_validated_tech_contact_valid_contact(async_client_mocker_
 
 
 @pytest.mark.asyncio
-async def test_db__get_actor_client_error(mocker):
+async def test__get_actor_client_error(mocker):
     def raise_err(*a, **kw):
         raise ClientError(status_code=503)
 
@@ -210,7 +211,7 @@ async def test_db__get_actor_client_error(mocker):
 
 
 @pytest.mark.asyncio
-async def test_db__get_actor_ok(async_client_mocker_factory, mocker):
+async def test__get_actor_ok(async_client_mocker_factory, mocker):
     user = UserFactory()
     p = mocker.patch('dbaas.services.ConnectAccountUser.retrieve', AsyncMock(return_value=user))
 
@@ -224,7 +225,7 @@ async def test_db__get_actor_ok(async_client_mocker_factory, mocker):
     p.assert_called_once_with('PA-123', user['id'], 'client')
 
 
-def test_db__prepare_db_document(mocker):
+def test__prepare_db_document(mocker):
     data = {'name': 'DB-1'}
     context = Context(account_id='VA-123')
     region = RegionFactory(id='eu', name='Fr')
@@ -260,7 +261,7 @@ def test_db__prepare_db_document(mocker):
 
 
 @pytest.mark.asyncio
-async def test_db__create_db_document_in_db_id_generated_immediately(db, mocker, config, logger):
+async def test__create_db_document_in_db_id_generated_immediately(db, mocker, config, logger):
     p = mocker.patch('dbaas.services.DB._generate_id', return_value='DB-1')
     data = {'x': True}
 
@@ -280,8 +281,8 @@ async def test_db__create_db_document_in_db_id_generated_immediately(db, mocker,
 
 
 @pytest.mark.asyncio
-async def test_db__create_db_document_in_db_id_generated_from_2_attempt(db, mocker, config, logger):
-    db[Collections.DB].insert_one({'id': 'DB-200'})
+async def test__create_db_document_in_db_id_generated_from_2_attempt(db, mocker, config, logger):
+    await db[Collections.DB].insert_one({'id': 'DB-200'})
     p = mocker.patch('dbaas.services.DB._generate_id', side_effect=['DB-200', 'DB-100'])
     data = {'name': 'new Db'}
 
@@ -301,8 +302,8 @@ async def test_db__create_db_document_in_db_id_generated_from_2_attempt(db, mock
 
 
 @pytest.mark.asyncio
-async def test_db__create_db_document_in_db_id_generation_error(db, mocker, config, logger):
-    db[Collections.DB].insert_one({'id': 'DB-300'})
+async def test__create_db_document_in_db_id_generation_error(db, mocker, config, logger):
+    await db[Collections.DB].insert_one({'id': 'DB-300'})
     p = mocker.patch('dbaas.services.DB._generate_id', return_value='DB-300')
 
     with pytest.raises(ValueError) as e:
@@ -323,7 +324,7 @@ async def test_db__create_db_document_in_db_id_generation_error(db, mocker, conf
 
 
 @pytest.mark.asyncio
-async def test_db__create_db_document_in_db_id_operation_error(db, mocker, config, logger):
+async def test__create_db_document_in_db_id_operation_error(db, mocker, config, logger):
     def raise_err(*a):
         raise WriteError('err')
 
@@ -343,11 +344,11 @@ async def test_db__create_db_document_in_db_id_operation_error(db, mocker, confi
 
 
 @pytest.mark.parametrize('execution_number', range(5))
-def test_db__generate_id_default(config, execution_number):
+def test__generate_id_default(config, execution_number):
     assert re.fullmatch(r'DBPG\-\d{5}', DB._generate_id(config))
 
 
-def test_db__generate_id_with_changed_config():
+def test__generate_id_with_changed_config():
     config = {
         'DB_ID_RANDOM_LENGTH': 3,
         'DB_ID_PREFIX': 'DBM',
@@ -357,7 +358,7 @@ def test_db__generate_id_with_changed_config():
 
 
 @pytest.mark.asyncio
-async def test_db__create_db_document_admin_document_created(db, admin_context, config, mocker):
+async def test__create_db_document_admin_document_created(db, admin_context, config, mocker):
     context = admin_context
     context.installation_id = 'EIN-123'
     data = {'name': 'test'}
@@ -386,7 +387,7 @@ async def test_db__create_db_document_admin_document_created(db, admin_context, 
 
 
 @pytest.mark.asyncio
-async def test_db__create_db_document_common_document_created(db, config, mocker):
+async def test__create_db_document_common_document_created(db, config, mocker):
     context = Context(installation_id='EIN-123')
     data = {'description': 'desc'}
     installation_p = mocker.patch(
@@ -445,7 +446,7 @@ async def test_db__create_db_document_common_document_created(db, config, mocker
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('error_cls', (ValueError, ClientError))
-async def test_db__create_db_document_error(db, error_cls, admin_context, mocker, config):
+async def test__create_db_document_error(db, error_cls, admin_context, mocker, config):
     def raise_err(*a):
         raise error_cls('err')
 
@@ -466,7 +467,7 @@ async def test_db__create_db_document_error(db, error_cls, admin_context, mocker
     ('UR-123-456', {'id': 'UR-123-456'}, 0),
     ('UR-000-000', {'id': 'UR-000-000'}, 1),
 ))
-async def test_db_create_ok(mocker, context_uid, am_call_count, actor):
+async def test_create_ok(mocker, context_uid, am_call_count, actor):
     data = {'name': 'patch'}
     context = Context(user_id=context_uid)
 
@@ -511,7 +512,7 @@ async def test_db_create_ok(mocker, context_uid, am_call_count, actor):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('error_cls', (ValueError, ClientError))
-async def test_db_create_error(error_cls, mocker):
+async def test_create_error(error_cls, mocker):
     def raise_err(*a):
         raise error_cls('err')
 
@@ -525,3 +526,147 @@ async def test_db_create_error(error_cls, mocker):
             'client',
             'config',
         )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('data', ({}, {'name': None, 'description': None, 'tech_contact': None}))
+async def test_update_empty_data(data, mocker):
+    db_document = DBFactory()
+
+    contact_p = mocker.patch('dbaas.services.DB._get_validated_tech_contact')
+    actor_p = mocker.patch('dbaas.services.DB._get_actor')
+    repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='result')
+
+    result = await DB.update(db_document, data, 'db', 'context', 'client')
+
+    assert result == 'result'
+
+    contact_p.assert_not_called()
+    actor_p.assert_not_called()
+    repr_p.assert_called_once_with(db_document)
+
+
+@pytest.mark.asyncio
+async def test_update_no_changes(mocker, db):
+    db_document = DBFactory()
+    data = DatabaseInUpdate(**db_document).dict()
+    await db[Collections.DB].insert_one(db_document)
+
+    contact_p = mocker.patch('dbaas.services.DB._get_validated_tech_contact')
+    actor_p = mocker.patch('dbaas.services.DB._get_actor')
+    repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='result')
+
+    result = await DB.update(db_document, data, 'db', 'context', 'client')
+    db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
+
+    assert result == 'result'
+    assert 'updated' not in db_document_from_db['events']
+
+    contact_p.assert_not_called()
+    actor_p.assert_not_called()
+    repr_p.assert_called_once_with(db_document)
+
+
+@pytest.mark.asyncio
+async def test_update_partial_update_ok(mocker, db):
+    db_document = DBFactory(name='old', description='old')
+    actor = UserFactory(id='UR-123', name='123')
+    data = {'name': 'new', 'tech_contact': None}
+    updated_event = {
+        'at': 'DT',
+        'by': {
+            'id': 'UR-123',
+            'name': '123',
+        },
+    }
+    await db[Collections.DB].insert_one(db_document)
+
+    contact_p = mocker.patch('dbaas.services.DB._get_validated_tech_contact')
+    actor_p = mocker.patch('dbaas.services.DB._get_actor', AsyncMock(return_value=actor))
+    repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='partial')
+    dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
+    dt.now.return_value = 'DT'
+
+    result = await DB.update(db_document, data, db, 'context', 'client')
+    db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
+
+    assert result == 'partial'
+
+    contact_p.assert_not_called()
+    actor_p.assert_called_once_with('context', 'client')
+
+    db_document['name'] = 'new'
+    db_document['events'].update(updated_event)
+    repr_p.assert_called_once_with(db_document)
+    assert db_document_from_db['name'] == 'new'
+    assert db_document_from_db['events']['created']
+    assert db_document_from_db['events']['updated'] == updated_event
+    assert db_document_from_db['description'] == 'old'
+    assert db_document_from_db['tech_contact'] == db_document['tech_contact']
+
+    count_docs = await db[Collections.DB].count_documents({})
+    assert count_docs == 1
+
+
+@pytest.mark.asyncio
+async def test_update_full_update_ok(mocker, db):
+    db_document = DBFactory(name='old', description='old', tech_contact__id='UR-000')
+    actor = UserFactory(id='UR-456', name='456')
+    tech_contact = UserFactory(id='UR-789', name='789', email='x@y.test')
+
+    data = {'name': 'new', 'description': 'new', 'tech_contact': tech_contact}
+    updated_event = {
+        'at': 'DT',
+        'by': {
+            'id': 'UR-456',
+            'name': '456',
+        },
+    }
+    await db[Collections.DB].insert_one(db_document)
+
+    contact_p = mocker.patch(
+        'dbaas.services.DB._get_validated_tech_contact',
+        AsyncMock(return_value=tech_contact),
+    )
+    actor_p = mocker.patch('dbaas.services.DB._get_actor', AsyncMock(return_value=actor))
+    repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='full')
+    dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
+    dt.now.return_value = 'DT'
+
+    result = await DB.update(db_document, data, db, 'context', 'client')
+    db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
+
+    assert result == 'full'
+
+    contact_p.assert_called_once_with(data, 'context', 'client')
+    actor_p.assert_called_once_with('context', 'client')
+
+    db_document['name'] = 'new'
+    db_document['description'] = 'new'
+    db_document['tech_contact'] = {
+        'id': 'UR-789',
+        'name': '789',
+        'email': 'x@y.test',
+    }
+    db_document['events'].update(updated_event)
+    repr_p.assert_called_once_with(db_document)
+    assert db_document_from_db['name'] == 'new'
+    assert db_document_from_db['events']['created']
+    assert db_document_from_db['events']['updated'] == updated_event
+    assert db_document_from_db['description'] == 'new'
+    assert db_document_from_db['tech_contact'] == db_document['tech_contact']
+
+    count_docs = await db[Collections.DB].count_documents({})
+    assert count_docs == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('error_cls', (ValueError, ClientError))
+async def test_update_error(error_cls, mocker):
+    def raise_err(*a):
+        raise error_cls('err')
+
+    mocker.patch('dbaas.services.DB._get_actor', side_effect=raise_err)
+
+    with pytest.raises(error_cls):
+        await DB.update({}, {'name': True}, 'db', 'context', 'client')

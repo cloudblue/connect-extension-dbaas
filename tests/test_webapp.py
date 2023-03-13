@@ -7,7 +7,13 @@
 import pytest
 from fastapi.encoders import jsonable_encoder
 
-from dbaas.schemas import DatabaseIn, DatabaseOutDetail, DatabaseOutList, RegionOut
+from dbaas.schemas import (
+    DatabaseInCreate,
+    DatabaseInUpdate,
+    DatabaseOutDetail,
+    DatabaseOutList,
+    RegionOut,
+)
 from dbaas.webapp import DBaaSWebApplication
 
 from tests.constants import CONTEXT_DEP_MOCK, DB_DEP_MOCK, INSTALLATION_CLIENT_DEP_MOCK
@@ -71,7 +77,7 @@ def test_retrieve_database_404(api_client, mocker):
 def test_create_database_201(api_client, mocker, config):
     db_document = DBFactory()
     p = mocker.patch('dbaas.webapp.DB.create', return_value=db_document)
-    data = DatabaseIn(**db_document).dict()
+    data = DatabaseInCreate(**db_document).dict()
 
     response = api_client.post('/api/v1/databases', json=data)
     assert response.status_code == 201
@@ -98,7 +104,7 @@ def test_create_database_400(api_client, mocker, config):
     assert response.json() == {'message': 'test'}
 
     p.assert_called_once_with(
-        DatabaseIn(**data).dict(),
+        DatabaseInCreate(**data).dict(),
         db=DB_DEP_MOCK,
         context=CONTEXT_DEP_MOCK,
         client=INSTALLATION_CLIENT_DEP_MOCK,
@@ -115,6 +121,75 @@ def test_create_database_422(api_client, mocker):
     assert response.json()
 
     p.assert_not_called()
+
+
+def test_update_database_200(api_client, mocker, config):
+    db_document = DBFactory()
+    db_document_id = db_document['id']
+    retrieve_p = mocker.patch('dbaas.webapp.DB.retrieve', return_value={'a': True})
+    update_p = mocker.patch('dbaas.webapp.DB.update', return_value=db_document)
+    data = DatabaseInUpdate(**db_document).dict()
+
+    response = api_client.put(f'/api/v1/databases/{db_document_id}', json=data)
+    assert response.status_code == 200
+    assert response.json() == jsonable_encoder(DatabaseOutDetail(**db_document))
+
+    retrieve_p.assert_called_once_with(db_document_id, DB_DEP_MOCK, CONTEXT_DEP_MOCK)
+    update_p.assert_called_once_with(
+        {'a': True},
+        data,
+        db=DB_DEP_MOCK,
+        context=CONTEXT_DEP_MOCK,
+        client=INSTALLATION_CLIENT_DEP_MOCK,
+    )
+
+
+def test_update_database_400(api_client, mocker, config):
+    def raise_ve(*a, **kw):
+        raise ValueError('test1')
+
+    db_document = DBFactory(events=None)
+    db_document_id = db_document['id']
+    retrieve_p = mocker.patch('dbaas.webapp.DB.retrieve', return_value={'some': 'mock'})
+    update_p = mocker.patch('dbaas.webapp.DB.update', side_effect=raise_ve)
+    data = DatabaseInUpdate(**db_document).dict()
+
+    response = api_client.put(f'/api/v1/databases/{db_document_id}', json=data)
+    assert response.status_code == 400
+    assert response.json() == {'message': 'test1'}
+
+    retrieve_p.assert_called_once_with(db_document_id, DB_DEP_MOCK, CONTEXT_DEP_MOCK)
+    update_p.assert_called_once_with(
+        {'some': 'mock'},
+        data,
+        db=DB_DEP_MOCK,
+        context=CONTEXT_DEP_MOCK,
+        client=INSTALLATION_CLIENT_DEP_MOCK,
+    )
+
+
+def test_update_database_404(api_client, mocker, config):
+    retrieve_p = mocker.patch('dbaas.webapp.DB.retrieve', return_value=None)
+    update_p = mocker.patch('dbaas.webapp.DB.update')
+
+    response = api_client.put('/api/v1/databases/DB-123', json={})
+    assert response.status_code == 404
+    assert response.json() == {'message': 'Database not found.'}
+
+    retrieve_p.assert_called_once_with('DB-123', DB_DEP_MOCK, CONTEXT_DEP_MOCK)
+    update_p.assert_not_called()
+
+
+def test_update_database_422(api_client, mocker, config):
+    retrieve_p = mocker.patch('dbaas.webapp.DB.retrieve')
+    update_p = mocker.patch('dbaas.webapp.DB.update')
+
+    response = api_client.put('/api/v1/databases/DB-456', json={'name': {}})
+    assert response.status_code == 422
+    assert response.json()
+
+    retrieve_p.assert_not_called()
+    update_p.assert_not_called()
 
 
 def test_list_regions(api_client, mocker):

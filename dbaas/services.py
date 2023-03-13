@@ -81,6 +81,67 @@ class DB:
         return cls._db_document_repr(inserted_db_doc)
 
     @classmethod
+    async def update(
+        cls,
+        db_document: dict,
+        data: dict,
+        db: AsyncIOMotorDatabase,
+        context: Context,
+        client: AsyncConnectClient,
+    ) -> dict:
+        updated_db_document = await cls._update(db_document, data, db, context, client)
+
+        return cls._db_document_repr(updated_db_document)
+
+    @classmethod
+    async def _update(
+        cls,
+        db_document: dict,
+        data: dict,
+        db: AsyncIOMotorDatabase,
+        context: Context,
+        client: AsyncConnectClient,
+    ) -> dict:
+        if not data:
+            return db_document
+
+        updates = {}
+        tech_contact_data = data.get('tech_contact')
+        if tech_contact_data and tech_contact_data['id'] != db_document['tech_contact']['id']:
+            tech_contact = await cls._get_validated_tech_contact(data, context, client)
+            updates['tech_contact'] = cls._prepare_tech_contact(tech_contact)
+
+        for key in ('name', 'description'):
+            value = data.get(key)
+            if value and value != db_document.get(key):
+                updates[key] = value
+
+        if not updates:
+            return db_document
+
+        actor = await cls._get_actor(context, client)
+
+        updated_db_document = copy(db_document)
+        updated_events = updated_db_document.get('events', {})
+        updated_events['updated'] = {
+            'at': datetime.now(tz=timezone.utc),
+            'by': {
+                'id': actor['id'],
+                'name': actor['name'],
+            },
+        }
+        updates['events'] = updated_events
+
+        db_coll = db[cls.COLLECTION]
+        await db_coll.update_one(
+            {'id': db_document['id']},
+            {'$set': updates},
+        )
+
+        updated_db_document.update(updates)
+        return updated_db_document
+
+    @classmethod
     def _default_query(cls, context: Context) -> dict:
         q = {'status': {'$ne': DBStatus.DELETED}}
 
@@ -163,11 +224,7 @@ class DB:
             'id': region_doc['id'],
             'name': region_doc['name'],
         }
-        db_document['tech_contact'] = {
-            'id': tech_contact['id'],
-            'name': tech_contact['name'],
-            'email': tech_contact['email'],
-        }
+        db_document['tech_contact'] = cls._prepare_tech_contact(tech_contact)
 
         return db_document
 
@@ -255,6 +312,14 @@ class DB:
 
         random_part = ''.join(random.choice(string.digits) for _ in range(id_random_length))
         return f'{id_prefix}-{random_part}'
+
+    @staticmethod
+    def _prepare_tech_contact(tech_contact: dict) -> dict:
+        return {
+            'id': tech_contact['id'],
+            'name': tech_contact['name'],
+            'email': tech_contact['email'],
+        }
 
 
 class Region:

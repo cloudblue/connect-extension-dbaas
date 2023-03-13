@@ -30,7 +30,13 @@ class TechContactOut(RefOut):
     email: str
 
 
-class DatabaseIn(BaseModel):
+class DatabaseInUpdate(BaseModel):
+    name: Optional[str] = Field(None, max_length=128)
+    description: Optional[str] = Field(None, max_length=512)
+    tech_contact: Optional[RefIn] = None
+
+
+class DatabaseInCreate(DatabaseInUpdate):
     name: str = Field(..., max_length=128)
     description: str = Field(..., max_length=512)
     workload: Literal[DBWorkload.all()]
@@ -38,7 +44,7 @@ class DatabaseIn(BaseModel):
     region: RefIn
 
 
-class DatabaseOutList(DatabaseIn):
+class DatabaseOutList(DatabaseInCreate):
     id: str
     region: RefOut
     tech_contact: RefOut
