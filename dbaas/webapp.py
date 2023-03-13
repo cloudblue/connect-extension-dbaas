@@ -23,6 +23,7 @@ from dbaas.schemas import (
     DatabaseInUpdate,
     DatabaseOutDetail,
     DatabaseOutList,
+    DatabaseReconfigure,
     JsonError,
     RegionOut,
 )
@@ -110,12 +111,46 @@ class DBaaSWebApplication(WebApplicationBase):
         client: AsyncConnectClient = Depends(get_installation_client),
         db=Depends(get_db),
     ):
+        result = await self._action(db_id, data, context, client, db, action=DB.update)
+
+        return result
+
+    @router.post(
+        '/v1/databases/{db_id}/reconfigure',
+        summary='Reconfigure database',
+        response_model=DatabaseOutDetail,
+        responses={
+            400: {'model': JsonError},
+            404: {'model': JsonError},
+        },
+    )
+    async def reconfigure_database(
+        self,
+        db_id: str,
+        data: DatabaseReconfigure,
+        context: Context = Depends(get_call_context),
+        client: AsyncConnectClient = Depends(get_installation_client),
+        db=Depends(get_db),
+    ):
+        result = await self._action(db_id, data, context, client, db, action=DB.reconfigure)
+
+        return result
+
+    async def _action(
+        self,
+        db_id: str,
+        data: dict,
+        context: Context,
+        client: AsyncConnectClient,
+        db,
+        action,
+    ):
         db_document = await DB.retrieve(db_id, db, context)
         if not db_document:
             return self._db_not_found_response()
 
         try:
-            updated_db_document = await DB.update(
+            updated_db_document = await action(
                 db_document,
                 data.dict(),
                 db=db,

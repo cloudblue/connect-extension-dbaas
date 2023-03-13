@@ -13,6 +13,7 @@ from dbaas.schemas import (
     DatabaseInUpdate,
     DatabaseOutDetail,
     DatabaseOutList,
+    DatabaseReconfigure,
     RegionOut,
 )
 
@@ -25,6 +26,10 @@ from tests.factories import CaseFactory, DBFactory, RegionFactory
         'name': None,
         'description': None,
         'tech_contact': None,
+    },
+    {
+        'name': '',
+        'description': '',
     },
     {'name': 'test'},
     {
@@ -52,6 +57,49 @@ def test_database_in_update_ok(data):
 def test_database_in_update_fail(data):
     with pytest.raises(ValueError):
         DatabaseInUpdate(**data)
+
+
+@pytest.mark.parametrize('data', [
+    {
+        'case': {
+            'subject': 'abc',
+            'description': None,
+        },
+    },
+    {
+        'case': {
+            'subject': 'x' * 300,
+            'description': 'y' * 1000,
+        },
+    },
+    {
+        'case': {
+            'subject': 'a',
+        },
+    },
+])
+def test_database_reconfigure_ok(data):
+    assert DatabaseReconfigure(**data)
+
+
+@pytest.mark.parametrize('data', [
+    {},
+    {
+        'subject': 'abc',
+        'description': None,
+    },
+    {'name': 'new'},
+    {'case': None},
+    {
+        'case': {
+            'subject': 'x' * 301,
+            'description': 'y' * 1001,
+        },
+    },
+])
+def test_database_reconfigure_fail(data):
+    with pytest.raises(ValueError):
+        DatabaseReconfigure(**data)
 
 
 @pytest.mark.parametrize('data', [

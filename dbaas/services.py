@@ -18,7 +18,7 @@ from connect.eaas.core.inject.asynchronous import AsyncConnectClient, get_instal
 from connect.eaas.core.inject.models import Context
 from pymongo.errors import DuplicateKeyError, OperationFailure
 
-from dbaas.constants import DBStatus, HelpdeskCaseSubjectAction
+from dbaas.constants import DBStatus
 from dbaas.database import Collections
 from dbaas.utils import is_admin_context
 
@@ -94,6 +94,56 @@ class DB:
         return cls._db_document_repr(updated_db_document)
 
     @classmethod
+    async def reconfigure(
+        cls,
+        db_document: dict,
+        data: dict,
+        db: AsyncIOMotorDatabase,
+        context: Context,
+        client: AsyncConnectClient,
+    ) -> dict:
+        status = db_document.get('status')
+        if status != DBStatus.ACTIVE:
+            raise ValueError('Only active DB can be reconfigured.')
+
+        actor = await cls._get_actor(context, client)
+        db_document_id = db_document['id']
+
+        updated_db_document = copy(db_document)
+        updates = {'status': DBStatus.RECONFIGURING}
+
+        updated_events = updated_db_document.get('events', {})
+        updated_events['reconfigured'] = cls._prepare_event(actor)
+        updates['events'] = updated_events
+
+        if not is_admin_context(context):
+            installation = await ConnectInstallation.retrieve(context.installation_id, client)
+
+            helpdesk_case = await ConnectHelpdeskCase.create_from_db_document(
+                db_document,
+                subject=data['case']['subject'],
+                description=data['case']['description'],
+                installation=installation,
+                client=client,
+            )
+
+            cases = updated_db_document.get('cases', [])
+            cases.append(cls._prepare_helpdesk_case(helpdesk_case))
+            updates['cases'] = cases
+
+        else:
+            updates['reconfiguration'] = data['case']
+
+        db_coll = db[cls.COLLECTION]
+        await db_coll.update_one(
+            {'id': db_document_id},
+            {'$set': updates},
+        )
+
+        updated_db_document.update(updates)
+        return cls._db_document_repr(updated_db_document)
+
+    @classmethod
     async def _update(
         cls,
         db_document: dict,
@@ -123,13 +173,7 @@ class DB:
 
         updated_db_document = copy(db_document)
         updated_events = updated_db_document.get('events', {})
-        updated_events['updated'] = {
-            'at': datetime.now(tz=timezone.utc),
-            'by': {
-                'id': actor['id'],
-                'name': actor['name'],
-            },
-        }
+        updated_events['updated'] = cls._prepare_event(actor)
         updates['events'] = updated_events
 
         db_coll = db[cls.COLLECTION]
@@ -211,15 +255,7 @@ class DB:
         db_document = copy(data)
         db_document['account_id'] = context.account_id
         db_document['status'] = DBStatus.REVIEWING
-        db_document['events'] = {
-            'created': {
-                'at': datetime.now(tz=timezone.utc),
-                'by': {
-                    'id': actor['id'],
-                    'name': actor['name'],
-                },
-            },
-        }
+        db_document['events'] = {'created': cls._prepare_event(actor)}
         db_document['region'] = {
             'id': region_doc['id'],
             'name': region_doc['name'],
@@ -251,15 +287,16 @@ class DB:
                 if is_admin_ctx:
                     return db_document
 
+                db_document_id = db_document['id']
                 helpdesk_case = await ConnectHelpdeskCase.create_from_db_document(
                     db_document,
-                    action=HelpdeskCaseSubjectAction.CREATE,
+                    subject=f'Request to create {db_document_id}.',
                     description=db_document['description'],
                     installation=installation,
                     client=client,
                 )
 
-                db_document['cases'] = [{'id': helpdesk_case['id']}]
+                db_document['cases'] = [cls._prepare_helpdesk_case(helpdesk_case)]
 
                 db_coll = cls._db_collection_from_db_session(db_session)
                 await db_coll.update_one(
@@ -321,6 +358,20 @@ class DB:
             'email': tech_contact['email'],
         }
 
+    @staticmethod
+    def _prepare_helpdesk_case(helpdesk_case: dict) -> dict:
+        return {'id': helpdesk_case['id']}
+
+    @staticmethod
+    def _prepare_event(actor: dict) -> dict:
+        return {
+            'at': datetime.now(tz=timezone.utc),
+            'by': {
+                'id': actor['id'],
+                'name': actor['name'],
+            },
+        }
+
 
 class Region:
     COLLECTION = Collections.REGION
@@ -377,15 +428,13 @@ class ConnectHelpdeskCase:
     async def create_from_db_document(
         cls,
         db_document: dict,
-        action: str,
+        subject: str,
         description: str,
         installation: str,
         client: AsyncConnectClient,
     ) -> dict:
-        db_id = db_document['id']
-
         data = {
-            'subject': f'Request to {action} {db_id}.',
+            'subject': subject,
             'description': description,
             'priority': 2,  # high
             'type': 'business',

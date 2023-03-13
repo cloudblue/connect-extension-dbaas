@@ -6,7 +6,7 @@
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, constr, Field
 
 from dbaas.constants import DBWorkload
 
@@ -16,7 +16,7 @@ class JsonError(BaseModel):
 
 
 class RefIn(BaseModel):
-    id: str = Field(..., max_length=32)
+    id: constr(min_length=1, max_length=32, strict=True)
 
 
 BaseRefOut = RefIn
@@ -37,8 +37,8 @@ class DatabaseInUpdate(BaseModel):
 
 
 class DatabaseInCreate(DatabaseInUpdate):
-    name: str = Field(..., max_length=128)
-    description: str = Field(..., max_length=512)
+    name: constr(min_length=1, max_length=128, strict=True)
+    description: constr(min_length=1, max_length=512, strict=True)
     workload: Literal[DBWorkload.all()]
     tech_contact: RefIn
     region: RefIn
@@ -56,6 +56,15 @@ class DatabaseOutList(DatabaseInCreate):
 class DatabaseOutDetail(DatabaseOutList):
     tech_contact: TechContactOut
     credentials: Optional[dict] = None
+
+
+class _DatabaseReconfigureCase(BaseModel):
+    subject: constr(min_length=1, max_length=300, strict=True)
+    description: Optional[str] = Field('DB reconfiguration.', max_length=1000)
+
+
+class DatabaseReconfigure(BaseModel):
+    case: _DatabaseReconfigureCase
 
 
 RegionOut = RefOut

@@ -9,7 +9,6 @@ from unittest.mock import AsyncMock
 import pytest
 from connect.client import ClientError
 
-from dbaas.constants import HelpdeskCaseSubjectAction
 from dbaas.services import ConnectHelpdeskCase
 
 from tests.factories import CaseFactory, DBFactory
@@ -29,7 +28,7 @@ async def test_create_from_db_document_client_error(mocker):
     with pytest.raises(ClientError):
         await ConnectHelpdeskCase.create_from_db_document(
             db_document,
-            action=HelpdeskCaseSubjectAction.CREATE,
+            subject='Request to create PGDB-100.',
             description='Some desc',
             installation='installation',
             client='client',
@@ -54,11 +53,7 @@ async def test_create_from_db_document_client_error(mocker):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('action, subject', (
-    (HelpdeskCaseSubjectAction.CREATE, 'Request to create DB-123.'),
-    (HelpdeskCaseSubjectAction.RECONFIGURE, 'Request to reconfigure DB-123.'),
-))
-async def test_create_from_db_document_ok(mocker, action, subject):
+async def test_create_from_db_document_ok(mocker):
     db_document = DBFactory(id='DB-123', tech_contact__id='UR-123')
     case = CaseFactory()
     create_p = mocker.patch(
@@ -71,7 +66,7 @@ async def test_create_from_db_document_ok(mocker, action, subject):
 
     result = await ConnectHelpdeskCase.create_from_db_document(
         db_document,
-        action=action,
+        subject='Request to create DB-123.',
         description='desc test',
         installation='installation',
         client='client',
@@ -80,7 +75,7 @@ async def test_create_from_db_document_ok(mocker, action, subject):
     assert result == case
 
     data = {
-        'subject': subject,
+        'subject': 'Request to create DB-123.',
         'description': 'desc test',
         'priority': 2,
         'type': 'business',

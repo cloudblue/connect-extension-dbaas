@@ -18,8 +18,3 @@ class DBStatus:
 class ContextCallTypes:
     ADMIN = 'admin'
     USER = 'user'
-
-
-class HelpdeskCaseSubjectAction:
-    CREATE = 'create'
-    RECONFIGURE = 'reconfigure'
