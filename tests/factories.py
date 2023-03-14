@@ -22,6 +22,9 @@ class CaseFactory(factory.DictFactory):
 
 class UserFactory(factory.DictFactory):
     id = factory.Sequence(lambda n: f'UR-{n:05}')
+    name = factory.Faker('name')
+    email = factory.Faker('email')
+    active = True
 
 
 class DBFactory(factory.DictFactory):
@@ -49,3 +52,15 @@ class DBFactory(factory.DictFactory):
     })
 
     account_id = factory.Sequence(lambda n: f'VA-{n:05}')
+
+
+class InstallationFactory(factory.DictFactory):
+    id = factory.Sequence(lambda n: f'EIN-{n:05}')
+
+    environment = factory.Dict({
+        'extension': factory.Dict({
+            'owner': factory.Dict({
+                'id': factory.Sequence(lambda n: f'PA-{n:05}'),
+            }),
+        }),
+    })

@@ -13,3 +13,8 @@ class DBStatus:
     ACTIVE = 'active'
     RECONFIGURING = 'reconfiguring'
     DELETED = 'deleted'
+
+
+class ContextCallTypes:
+    ADMIN = 'admin'
+    USER = 'user'

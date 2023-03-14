@@ -6,9 +6,34 @@
 import os
 
 import pytest
+from connect.client import AsyncConnectClient
+from connect.eaas.core.inject.common import get_call_context, get_config
+from connect.eaas.core.inject.models import Context
 
+from dbaas.constants import ContextCallTypes
 from dbaas.database import Collections, DBEnvVar, get_db, prepare_db
+from dbaas.utils import get_installation_client
 from dbaas.webapp import DBaaSWebApplication
+
+from tests.constants import CONTEXT_DEP_MOCK, DB_DEP_MOCK, INSTALLATION_CLIENT_DEP_MOCK
+
+
+@pytest.fixture
+def default_endpoint():
+    return 'https://localhost/public/v1'
+
+
+@pytest.fixture
+def async_connect_client(default_endpoint):
+    return AsyncConnectClient(
+        'ApiKey fake_api_key',
+        endpoint=default_endpoint,
+    )
+
+
+@pytest.fixture
+def async_client_mocker(async_client_mocker_factory, default_endpoint):
+    return async_client_mocker_factory(base_url=default_endpoint)
 
 
 @pytest.fixture
@@ -45,11 +70,19 @@ async def db(logger, config, patch_connection_string):
 
 
 @pytest.fixture()
-def api_client(test_client_factory):
+def api_client(test_client_factory, config):
     client = test_client_factory(DBaaSWebApplication)
     client.app.dependency_overrides = {
-        get_db: lambda: 'db',
+        get_db: lambda: DB_DEP_MOCK,
         prepare_db: lambda: None,
+        get_installation_client: lambda: INSTALLATION_CLIENT_DEP_MOCK,
+        get_call_context: lambda: CONTEXT_DEP_MOCK,
+        get_config: lambda: config,
     }
 
     yield client
+
+
+@pytest.fixture()
+def admin_context():
+    return Context(call_type=ContextCallTypes.ADMIN)
