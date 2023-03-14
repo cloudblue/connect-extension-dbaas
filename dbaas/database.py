@@ -4,7 +4,6 @@
 # All rights reserved.
 #
 
-import asyncio
 import urllib
 from logging import LoggerAdapter
 
@@ -70,7 +69,7 @@ async def prepare_db_collection(
         _log_that_collection_exists(logger, coll_name)
         collection = db[coll_name]
 
-    asyncio.ensure_future(collection.create_index('id', unique=True))
+    await collection.create_index('id', unique=True)
 
     return collection
 
@@ -88,7 +87,7 @@ async def prepare_region_collection(
         _log_that_collection_exists(logger, coll_name)
         collection = db[coll_name]
 
-    asyncio.ensure_future(collection.create_index('id', unique=True))
+    await collection.create_index('id', unique=True)
 
     return collection
 

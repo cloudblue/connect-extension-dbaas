@@ -6,6 +6,7 @@
 import os
 
 import pytest
+from connect.client import AsyncConnectClient
 from connect.eaas.core.inject.common import get_call_context, get_config
 from connect.eaas.core.inject.models import Context
 
@@ -15,6 +16,24 @@ from dbaas.utils import get_installation_client
 from dbaas.webapp import DBaaSWebApplication
 
 from tests.constants import CONTEXT_DEP_MOCK, DB_DEP_MOCK, INSTALLATION_CLIENT_DEP_MOCK
+
+
+@pytest.fixture
+def default_endpoint():
+    return 'https://localhost/public/v1'
+
+
+@pytest.fixture
+def async_connect_client(default_endpoint):
+    return AsyncConnectClient(
+        'ApiKey fake_api_key',
+        endpoint=default_endpoint,
+    )
+
+
+@pytest.fixture
+def async_client_mocker(async_client_mocker_factory, default_endpoint):
+    return async_client_mocker_factory(base_url=default_endpoint)
 
 
 @pytest.fixture

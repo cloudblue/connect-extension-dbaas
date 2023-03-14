@@ -95,36 +95,21 @@ async def test_create_from_db_document_ok(mocker):
 @pytest.mark.asyncio
 @pytest.mark.parametrize('status_code', (400, 503))
 async def test_create_bad_response_from_connect_api(
-    async_client_mocker_factory, mocker, status_code,
+    async_client_mocker, status_code, async_connect_client,
 ):
-    def raise_err(*a, **kw):
-        raise ClientError(status_code=status_code)
-
-    client_mocker = async_client_mocker_factory()
-    p = mocker.patch(
-        'connect.client.testing.models.base.CollectionMock.create',
-        side_effect=raise_err,
-    )
+    async_client_mocker('helpdesk').cases.create(status_code=status_code)
 
     with pytest.raises(ClientError):
-        await ConnectHelpdeskCase.create({}, client_mocker)
-
-    p.assert_called_once_with(payload={})
+        await ConnectHelpdeskCase.create({}, async_connect_client)
 
 
 @pytest.mark.asyncio
-async def test_create_ok(async_client_mocker_factory, mocker):
+async def test_create_ok(async_client_mocker, async_connect_client):
     helpdesk_case = CaseFactory()
     data = {'subject': 'some'}
 
-    client_mocker = async_client_mocker_factory()
-    p = mocker.patch(
-        'connect.client.testing.models.base.CollectionMock.create',
-        AsyncMock(return_value=helpdesk_case),
-    )
+    async_client_mocker('helpdesk').cases.create(return_value=helpdesk_case)
 
-    result = await ConnectHelpdeskCase.create(data, client_mocker)
+    result = await ConnectHelpdeskCase.create(data, async_connect_client)
 
     assert result == helpdesk_case
-
-    p.assert_called_once_with(payload=data)
