@@ -10,16 +10,18 @@ from copy import copy
 from datetime import datetime, timezone
 from typing import Optional
 
+import bson
 import pymongo
 from connect.client import ClientError
 from connect.eaas.core.logging import RequestLogger
+from cryptography.fernet import Fernet
 from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
 from connect.eaas.core.inject.asynchronous import AsyncConnectClient, get_installation
 from connect.eaas.core.inject.models import Context
 from pymongo.errors import DuplicateKeyError, OperationFailure
 
 from dbaas.constants import DBStatus
-from dbaas.database import Collections
+from dbaas.database import Collections, DBEnvVar
 from dbaas.utils import is_admin_context
 
 
@@ -47,6 +49,7 @@ class DB:
         db_id: str,
         db: AsyncIOMotorDatabase,
         context: Context,
+        config: Optional[dict] = None,
     ) -> Optional[dict]:
         db_coll = db[cls.COLLECTION]
 
@@ -55,7 +58,7 @@ class DB:
         db_document = await db_coll.find_one(query)
 
         if db_document:
-            return cls._db_document_repr(db_document)
+            return cls._db_document_repr(db_document, config=config)
 
     @classmethod
     async def create(
@@ -124,6 +127,7 @@ class DB:
         db: AsyncIOMotorDatabase,
         context: Context,
         client: AsyncConnectClient,
+        **kwargs,
     ) -> dict:
         status = db_document.get('status')
         if status != DBStatus.ACTIVE:
@@ -172,11 +176,12 @@ class DB:
         db_document: dict,
         data: dict,
         db: AsyncIOMotorDatabase,
+        config: dict,
         **kwargs,
     ) -> dict:
-        updated_db_document = await cls._activate(db_document, data, db)
+        updated_db_document = await cls._activate(db_document, data, db, config)
 
-        return cls._db_document_repr(updated_db_document)
+        return cls._db_document_repr(updated_db_document, config=config)
 
     @classmethod
     async def _activate(
@@ -184,6 +189,7 @@ class DB:
         db_document: dict,
         data: dict,
         db: AsyncIOMotorDatabase,
+        config: dict,
     ):
         status = db_document.get('status')
         credentials = data.get('credentials')
@@ -199,7 +205,7 @@ class DB:
                 return db_document
 
         else:
-            updates['credentials'] = credentials
+            updates['credentials'] = cls._encrypt_dict(credentials, config)
 
         updated_events = updated_db_document.get('events', {})
         updated_events['activated'] = cls._prepare_event()
@@ -266,7 +272,7 @@ class DB:
         return q
 
     @classmethod
-    def _db_document_repr(cls, db_document: dict) -> dict:
+    def _db_document_repr(cls, db_document: dict, config: dict = None) -> dict:
         document = copy(db_document)
 
         cases = document.get('cases')
@@ -274,8 +280,13 @@ class DB:
             document['case'] = cases[-1]
 
         status = document.get('status')
-        if status not in (DBStatus.ACTIVE, DBStatus.RECONFIGURING) and 'credentials' in db_document:
-            del document['credentials']
+        credentials = db_document.get('credentials')
+        if credentials:
+            if (not config) or (status not in (DBStatus.ACTIVE, DBStatus.RECONFIGURING)):
+                del document['credentials']
+
+            else:
+                document['credentials'] = cls._decrypt_dict(document['credentials'], config)
 
         return document
 
@@ -446,6 +457,23 @@ class DB:
             }
 
         return result
+
+    @classmethod
+    def _decrypt_dict(cls, value: bytes, config: dict):
+        decrypted_byte_value = Fernet(cls._crypto_key(config)).decrypt(value)
+
+        return bson.decode(decrypted_byte_value)
+
+    @classmethod
+    def _encrypt_dict(cls, value, config: dict):
+        byte_value = bson.encode(value)
+        encrypted_byte_value = Fernet(cls._crypto_key(config)).encrypt(byte_value)
+
+        return encrypted_byte_value
+
+    @staticmethod
+    def _crypto_key(config: dict):
+        return bytes.fromhex(config[DBEnvVar.ENCRYPTION_KEY])
 
 
 class Region:

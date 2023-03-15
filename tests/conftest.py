@@ -48,6 +48,8 @@ def config():
         DBEnvVar.USER: 'root',
         DBEnvVar.PASSWORD: '1q2w3e',
         DBEnvVar.DB: 'db',
+        DBEnvVar.ENCRYPTION_KEY: '4e326a614b7653567337647176595555524552476f44'
+                                 '55506b4d5048454b336b4c577851334c645f46634d3d',
     }
 
 

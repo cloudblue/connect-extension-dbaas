@@ -24,11 +24,15 @@ class DBEnvVar:
     PASSWORD = 'DB_PASSWORD'
     DB = 'DB_NAME'
 
+    ENCRYPTION_KEY = 'DB_ENCRYPTION_KEY'
+
 
 def get_db(config: dict = Depends(get_config)) -> AsyncIOMotorDatabase:
     db_host = config[DBEnvVar.HOST]
     db_user = urllib.parse.quote(config[DBEnvVar.USER])
     db_password = urllib.parse.quote(config[DBEnvVar.PASSWORD])
+
+    assert config[DBEnvVar.ENCRYPTION_KEY]
 
     connection_str = get_full_connection_string(f'{db_user}:{db_password}@{db_host}')
     client = AsyncIOMotorClient(connection_str, serverSelectionTimeoutMS=5000)

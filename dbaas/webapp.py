@@ -94,8 +94,9 @@ class DBaaSWebApplication(WebApplicationBase):
         db_id: _db_id_type,
         context: Context = Depends(get_call_context),
         db=Depends(get_db),
+        config: dict = Depends(get_config),
     ):
-        db_document = await DB.retrieve(db_id, db, context)
+        db_document = await DB.retrieve(db_id, db, context, config=config)
         if not db_document:
             return self._db_not_found_response()
 
@@ -183,10 +184,17 @@ class DBaaSWebApplication(WebApplicationBase):
         db_id: _db_id_type,
         data: DatabaseActivate,
         context: Context = Depends(get_call_context),
+        config: dict = Depends(get_config),
         db=Depends(get_db),
     ):
         result = await self._action(
-            db_id, data=data, action=DB.activate, is_admin_action=True, context=context, db=db,
+            db_id,
+            data=data,
+            action=DB.activate,
+            is_admin_action=True,
+            context=context,
+            db=db,
+            config=config,
         )
 
         return result
@@ -200,6 +208,7 @@ class DBaaSWebApplication(WebApplicationBase):
         data: Optional[BaseModel] = None,
         is_admin_action: Optional[bool] = False,
         client: Optional[AsyncConnectClient] = None,
+        config: dict = None,
     ):
         if is_admin_action and (not is_admin_context(context)):
             return self._permission_denied_response()
@@ -216,6 +225,7 @@ class DBaaSWebApplication(WebApplicationBase):
                 db=db,
                 context=context,
                 client=client,
+                config=config,
             )
         except ValueError as e:
             return self._service_logic_error_response(e)

@@ -57,7 +57,7 @@ def test_list_databases_several_dbs(api_client, mocker, common_context):
     p.assert_called_once_with(DB_DEP_MOCK, common_context)
 
 
-def test_retrieve_database_200(api_client, mocker, common_context):
+def test_retrieve_database_200(api_client, mocker, common_context, config):
     db_document = DBFactory()
     p = mocker.patch('dbaas.webapp.DB.retrieve', return_value=db_document)
 
@@ -65,17 +65,17 @@ def test_retrieve_database_200(api_client, mocker, common_context):
     assert response.status_code == 200
     assert response.json() == jsonable_encoder(DatabaseOutDetail(**db_document))
 
-    p.assert_called_once_with('DB-456-789', DB_DEP_MOCK, common_context)
+    p.assert_called_once_with('DB-456-789', DB_DEP_MOCK, common_context, config=config)
 
 
-def test_retrieve_database_404(api_client, mocker, common_context):
+def test_retrieve_database_404(api_client, mocker, common_context, config):
     p = mocker.patch('dbaas.webapp.DB.retrieve', return_value=None)
 
     response = api_client.get(f'{DB_API}/DB-123')
     assert response.status_code == 404
     assert response.json() == {'message': 'Database not found.'}
 
-    p.assert_called_once_with('DB-123', DB_DEP_MOCK, common_context)
+    p.assert_called_once_with('DB-123', DB_DEP_MOCK, common_context, config=config)
 
 
 def test_create_database_201(api_client, mocker, config, common_context):
@@ -145,6 +145,7 @@ def test_update_database_200(api_client, mocker, config, common_context):
         db=DB_DEP_MOCK,
         context=common_context,
         client=INSTALLATION_CLIENT_DEP_MOCK,
+        config=None,
     )
 
 
@@ -169,6 +170,7 @@ def test_update_database_400(api_client, mocker, config, common_context):
         db=DB_DEP_MOCK,
         context=common_context,
         client=INSTALLATION_CLIENT_DEP_MOCK,
+        config=None,
     )
 
 
@@ -214,6 +216,7 @@ def test_reconfigure_database_200(api_client, mocker, config, common_context):
         db=DB_DEP_MOCK,
         context=common_context,
         client=INSTALLATION_CLIENT_DEP_MOCK,
+        config=None,
     )
 
 
@@ -238,6 +241,7 @@ def test_reconfigure_database_400(api_client, mocker, config, common_context):
         db=DB_DEP_MOCK,
         context=common_context,
         client=INSTALLATION_CLIENT_DEP_MOCK,
+        config=None,
     )
 
 
@@ -284,6 +288,7 @@ def test_activate_database_200(admin_api_client, mocker, config, admin_context):
         db=DB_DEP_MOCK,
         context=admin_context,
         client=None,
+        config=config,
     )
 
 
@@ -308,6 +313,7 @@ def test_activate_database_400(admin_api_client, mocker, config, admin_context):
         db=DB_DEP_MOCK,
         context=admin_context,
         client=None,
+        config=config,
     )
 
 
@@ -365,6 +371,7 @@ def test_delete_database_204(admin_api_client, mocker, config, admin_context):
         db=DB_DEP_MOCK,
         context=admin_context,
         client=None,
+        config=None,
     )
 
 

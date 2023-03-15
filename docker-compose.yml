@@ -39,8 +39,7 @@ services:
     build:
       context: .
     working_dir: /extension
-#    command: extension-test
-    command: bash -c 'poetry install && poetry run -q flake8 && poetry run -q pytest -vv'
+    command: extension-test
     volumes:
       - .:/extension
     env_file:
