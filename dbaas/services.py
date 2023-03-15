@@ -94,6 +94,29 @@ class DB:
         return cls._db_document_repr(updated_db_document)
 
     @classmethod
+    async def delete(
+        cls,
+        db_document: dict,
+        db: AsyncIOMotorDatabase,
+        **kwargs,
+    ) -> dict:
+        updated_db_document = copy(db_document)
+        updates = {'status': DBStatus.DELETED}
+
+        updated_events = updated_db_document.get('events', {})
+        updated_events['deleted'] = cls._prepare_event()
+        updates['events'] = updated_events
+
+        db_coll = db[cls.COLLECTION]
+        await db_coll.update_one(
+            {'id': db_document['id']},
+            {'$set': updates},
+        )
+
+        updated_db_document.update(updates)
+        return cls._db_document_repr(updated_db_document)
+
+    @classmethod
     async def reconfigure(
         cls,
         db_document: dict,
@@ -142,6 +165,54 @@ class DB:
 
         updated_db_document.update(updates)
         return cls._db_document_repr(updated_db_document)
+
+    @classmethod
+    async def activate(
+        cls,
+        db_document: dict,
+        data: dict,
+        db: AsyncIOMotorDatabase,
+        **kwargs,
+    ) -> dict:
+        updated_db_document = await cls._activate(db_document, data, db)
+
+        return cls._db_document_repr(updated_db_document)
+
+    @classmethod
+    async def _activate(
+        cls,
+        db_document: dict,
+        data: dict,
+        db: AsyncIOMotorDatabase,
+    ):
+        status = db_document.get('status')
+        credentials = data.get('credentials')
+
+        updated_db_document = copy(db_document)
+        updates = {'status': DBStatus.ACTIVE}
+
+        if not credentials:
+            if status == DBStatus.REVIEWING:
+                raise ValueError('Credentials are required for DB activation.')
+
+            if status == DBStatus.ACTIVE:
+                return db_document
+
+        else:
+            updates['credentials'] = credentials
+
+        updated_events = updated_db_document.get('events', {})
+        updated_events['activated'] = cls._prepare_event()
+        updates['events'] = updated_events
+
+        db_coll = db[cls.COLLECTION]
+        await db_coll.update_one(
+            {'id': db_document['id']},
+            {'$set': updates},
+        )
+
+        updated_db_document.update(updates)
+        return updated_db_document
 
     @classmethod
     async def _update(
@@ -363,14 +434,18 @@ class DB:
         return {'id': helpdesk_case['id']}
 
     @staticmethod
-    def _prepare_event(actor: dict) -> dict:
-        return {
+    def _prepare_event(actor: Optional[dict] = None) -> dict:
+        result = {
             'at': datetime.now(tz=timezone.utc),
-            'by': {
+        }
+
+        if actor:
+            result['by'] = {
                 'id': actor['id'],
                 'name': actor['name'],
-            },
-        }
+            }
+
+        return result
 
 
 class Region:
@@ -378,17 +453,27 @@ class Region:
 
     @classmethod
     async def list(cls, db: AsyncIOMotorDatabase) -> list[dict]:
-        db_coll = db[cls.COLLECTION]
-        results = await db_coll.find().sort('name').to_list(length=20)
+        region_coll = db[cls.COLLECTION]
+        results = await region_coll.find().sort('name').to_list(length=20)
 
         return results
 
     @classmethod
     async def retrieve(cls, region_id: str, db: AsyncIOMotorDatabase) -> Optional[dict]:
-        db_coll = db[cls.COLLECTION]
-        region_document = await db_coll.find_one({'id': region_id})
+        region_coll = db[cls.COLLECTION]
+        region_document = await region_coll.find_one({'id': region_id})
 
         return region_document
+
+    @classmethod
+    async def create(cls, data: dict, db: AsyncIOMotorDatabase) -> dict:
+        region_coll = db[cls.COLLECTION]
+        try:
+            await region_coll.insert_one(data)
+            return data
+
+        except DuplicateKeyError:
+            raise ValueError('ID must be unique.')
 
 
 class ConnectAccountUser:

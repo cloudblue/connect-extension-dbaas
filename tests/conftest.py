@@ -15,7 +15,7 @@ from dbaas.database import Collections, DBEnvVar, get_db, prepare_db
 from dbaas.utils import get_installation_client
 from dbaas.webapp import DBaaSWebApplication
 
-from tests.constants import CONTEXT_DEP_MOCK, DB_DEP_MOCK, INSTALLATION_CLIENT_DEP_MOCK
+from tests.constants import DB_DEP_MOCK, INSTALLATION_CLIENT_DEP_MOCK
 
 
 @pytest.fixture
@@ -70,13 +70,18 @@ async def db(logger, config, patch_connection_string):
 
 
 @pytest.fixture()
-def api_client(test_client_factory, config):
+def common_context():
+    return Context(call_type=ContextCallTypes.USER)
+
+
+@pytest.fixture()
+def api_client(test_client_factory, config, common_context):
     client = test_client_factory(DBaaSWebApplication)
     client.app.dependency_overrides = {
         get_db: lambda: DB_DEP_MOCK,
         prepare_db: lambda: None,
         get_installation_client: lambda: INSTALLATION_CLIENT_DEP_MOCK,
-        get_call_context: lambda: CONTEXT_DEP_MOCK,
+        get_call_context: lambda: common_context,
         get_config: lambda: config,
     }
 
@@ -86,3 +91,10 @@ def api_client(test_client_factory, config):
 @pytest.fixture()
 def admin_context():
     return Context(call_type=ContextCallTypes.ADMIN)
+
+
+@pytest.fixture()
+def admin_api_client(api_client, admin_context):
+    api_client.app.dependency_overrides[get_call_context] = lambda: admin_context
+
+    yield api_client

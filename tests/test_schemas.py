@@ -9,11 +9,13 @@ from fastapi.encoders import jsonable_encoder
 
 from dbaas.constants import DBStatus, DBWorkload
 from dbaas.schemas import (
+    DatabaseActivate,
     DatabaseInCreate,
     DatabaseInUpdate,
     DatabaseOutDetail,
     DatabaseOutList,
     DatabaseReconfigure,
+    RegionIn,
     RegionOut,
 )
 
@@ -100,6 +102,33 @@ def test_database_reconfigure_ok(data):
 def test_database_reconfigure_fail(data):
     with pytest.raises(ValueError):
         DatabaseReconfigure(**data)
+
+
+@pytest.mark.parametrize('data', [
+    {},
+    {
+        'other': 'some',
+        'credentials': None,
+    },
+    {'credentials': {}},
+    {
+        'credentials': {
+            'username': 'user',
+            'password': 'pswd',
+        },
+    },
+])
+def test_database_activate_ok(data):
+    assert DatabaseActivate(**data)
+
+
+@pytest.mark.parametrize('data', [
+    {'credentials': [1, 2]},
+    {'credentials': 5},
+])
+def test_database_activate_fail(data):
+    with pytest.raises(ValueError):
+        DatabaseActivate(**data)
 
 
 @pytest.mark.parametrize('data', [
@@ -225,3 +254,30 @@ def test_region_out():
     region_doc = RegionFactory(id='t', name='test')
 
     assert jsonable_encoder(RegionOut(**region_doc)) == {'id': 't', 'name': 'test'}
+
+
+@pytest.mark.parametrize('data', [
+    {
+        'id': 'eu',
+        'name': 'Spain',
+    },
+    {
+        'name': 'x' * 64,
+        'id': 'y' * 32,
+    },
+])
+def test_region_in_ok(data):
+    assert RegionIn(**data)
+
+
+@pytest.mark.parametrize('data', [
+    {},
+    {'id': 'eu'},
+    {
+        'name': 'x' * 65,
+        'id': 'y' * 33,
+    },
+])
+def test_region_in_fail(data):
+    with pytest.raises(ValueError):
+        RegionIn(**data)
