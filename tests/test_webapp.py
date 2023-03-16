@@ -3,9 +3,12 @@
 # Copyright (c) 2023, Ingram Micro
 # All rights reserved.
 #
+from unittest.mock import AsyncMock
 
 import pytest
+from connect.client import ClientError
 from fastapi.encoders import jsonable_encoder
+from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 
 from dbaas.schemas import (
     DatabaseInCreate,
@@ -14,7 +17,7 @@ from dbaas.schemas import (
     DatabaseOutList,
     RegionOut,
 )
-from dbaas.webapp import DBaaSWebApplication
+from dbaas.webapp import DBaaSWebApplication, handle_db_exceptions_mw
 
 from tests.constants import DB_DEP_MOCK, INSTALLATION_CLIENT_DEP_MOCK
 from tests.factories import DBFactory, RegionFactory
@@ -22,6 +25,48 @@ from tests.factories import DBFactory, RegionFactory
 
 DB_API = '/api/v1/databases'
 REGION_API = '/api/v1/regions'
+
+
+@pytest.mark.asyncio
+async def test_handle_db_exceptions_mw_no_exceptions():
+    call_next = AsyncMock(return_value='response')
+
+    result = await handle_db_exceptions_mw('request', call_next)
+    assert result == 'response'
+
+    call_next.assert_called_once_with('request')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('error_cls', (PyMongoError, ServerSelectionTimeoutError))
+async def test_handle_db_exceptions_mw_db_exception(error_cls):
+    def raise_err(*a):
+        raise error_cls('test')
+
+    call_next = AsyncMock(side_effect=raise_err)
+
+    result = await handle_db_exceptions_mw('request1', call_next)
+    assert result.status_code == 503
+
+    call_next.assert_called_once_with('request1')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('error_cls', (RuntimeError, ClientError))
+async def test_handle_db_exceptions_mw_other_exception(error_cls):
+    def raise_err(*a):
+        raise error_cls('test')
+
+    call_next = AsyncMock(side_effect=raise_err)
+
+    with pytest.raises(error_cls):
+        await handle_db_exceptions_mw('request', call_next)
+
+    call_next.assert_called_once_with('request')
+
+
+def test_get_middlewares():
+    assert DBaaSWebApplication.get_middlewares() == [handle_db_exceptions_mw]
 
 
 @pytest.mark.asyncio

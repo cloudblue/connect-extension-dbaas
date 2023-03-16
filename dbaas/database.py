@@ -10,7 +10,10 @@ from logging import LoggerAdapter
 from connect.eaas.core.inject.common import get_config
 from fastapi import Depends
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
-from pymongo.errors import CollectionInvalid
+from pymongo.errors import CollectionInvalid, PyMongoError
+
+
+DBException = PyMongoError
 
 
 class Collections:

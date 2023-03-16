@@ -16,10 +16,10 @@ from connect.eaas.core.extension import WebApplicationBase
 from connect.eaas.core.inject.asynchronous import AsyncConnectClient
 from connect.eaas.core.inject.common import get_call_context, get_config
 from connect.eaas.core.inject.models import Context
-from fastapi import Depends, responses
+from fastapi import Depends, Request, responses
 from pydantic import BaseModel, constr
 
-from dbaas.database import get_db, prepare_db
+from dbaas.database import DBException, get_db, prepare_db
 from dbaas.schemas import (
     DatabaseActivate,
     DatabaseInCreate,
@@ -38,12 +38,25 @@ from dbaas.utils import get_installation_client, is_admin_context
 _db_id_type = constr(strict=True, max_length=16)
 
 
+async def handle_db_exceptions_mw(request: Request, call_next) -> responses.Response:
+    try:
+        response = await call_next(request)
+
+    except DBException:
+        response = responses.JSONResponse({'message': 'Service Unavailable.'}, status_code=503)
+
+    return response
+
+
 @web_app(router)
 @devops_pages([{
     'label': 'Databases',
     'url': '/static/index.html',
 }])
 class DBaaSWebApplication(WebApplicationBase):
+    @classmethod
+    def get_middlewares(cls):
+        return [handle_db_exceptions_mw]
 
     @router.get(
         '/v1/databases',
