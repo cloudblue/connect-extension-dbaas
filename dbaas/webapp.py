@@ -5,6 +5,7 @@
 #
 
 from logging import LoggerAdapter
+from typing import Optional
 
 from connect.eaas.core.decorators import (
     devops_pages,
@@ -15,20 +16,36 @@ from connect.eaas.core.extension import WebApplicationBase
 from connect.eaas.core.inject.asynchronous import AsyncConnectClient
 from connect.eaas.core.inject.common import get_call_context, get_config
 from connect.eaas.core.inject.models import Context
-from fastapi import Depends, responses
+from fastapi import Depends, Request, responses
+from pydantic import BaseModel, constr
 
-from dbaas.database import get_db, prepare_db
+from dbaas.database import DBException, get_db, prepare_db
 from dbaas.schemas import (
+    DatabaseActivate,
     DatabaseInCreate,
     DatabaseInUpdate,
     DatabaseOutDetail,
     DatabaseOutList,
     DatabaseReconfigure,
     JsonError,
+    RegionIn,
     RegionOut,
 )
 from dbaas.services import DB, Region
-from dbaas.utils import get_installation_client
+from dbaas.utils import get_installation_client, is_admin_context
+
+
+_db_id_type = constr(strict=True, max_length=16)
+
+
+async def handle_db_exceptions_mw(request: Request, call_next) -> responses.Response:
+    try:
+        response = await call_next(request)
+
+    except DBException:
+        response = responses.JSONResponse({'message': 'Service Unavailable.'}, status_code=503)
+
+    return response
 
 
 @web_app(router)
@@ -37,6 +54,9 @@ from dbaas.utils import get_installation_client
     'url': '/static/index.html',
 }])
 class DBaaSWebApplication(WebApplicationBase):
+    @classmethod
+    def get_middlewares(cls):
+        return [handle_db_exceptions_mw]
 
     @router.get(
         '/v1/databases',
@@ -84,11 +104,12 @@ class DBaaSWebApplication(WebApplicationBase):
     )
     async def retrieve_database(
         self,
-        db_id: str,
+        db_id: _db_id_type,
         context: Context = Depends(get_call_context),
         db=Depends(get_db),
+        config: dict = Depends(get_config),
     ):
-        db_document = await DB.retrieve(db_id, db, context)
+        db_document = await DB.retrieve(db_id, db, context, config=config)
         if not db_document:
             return self._db_not_found_response()
 
@@ -105,15 +126,38 @@ class DBaaSWebApplication(WebApplicationBase):
     )
     async def update_database(
         self,
-        db_id: str,
+        db_id: _db_id_type,
         data: DatabaseInUpdate,
         context: Context = Depends(get_call_context),
         client: AsyncConnectClient = Depends(get_installation_client),
         db=Depends(get_db),
     ):
-        result = await self._action(db_id, data, context, client, db, action=DB.update)
+        result = await self._action(
+            db_id, data=data, action=DB.update, context=context, client=client, db=db,
+        )
 
         return result
+
+    @router.delete(
+        '/v1/databases/{db_id}',
+        summary='Delete database',
+        responses={
+            403: {'model': JsonError},
+            404: {'model': JsonError},
+        },
+        status_code=204,
+    )
+    async def delete_database(
+        self,
+        db_id: _db_id_type,
+        context: Context = Depends(get_call_context),
+        db=Depends(get_db),
+    ):
+        result = await self._action(
+            db_id, action=DB.delete, is_admin_action=True, context=context, db=db,
+        )
+
+        return responses.Response(status_code=204) if isinstance(result, BaseModel) else result
 
     @router.post(
         '/v1/databases/{db_id}/reconfigure',
@@ -126,49 +170,80 @@ class DBaaSWebApplication(WebApplicationBase):
     )
     async def reconfigure_database(
         self,
-        db_id: str,
+        db_id: _db_id_type,
         data: DatabaseReconfigure,
         context: Context = Depends(get_call_context),
         client: AsyncConnectClient = Depends(get_installation_client),
         db=Depends(get_db),
     ):
-        result = await self._action(db_id, data, context, client, db, action=DB.reconfigure)
+        result = await self._action(
+            db_id, data=data, action=DB.reconfigure, context=context, client=client, db=db,
+        )
+
+        return result
+
+    @router.post(
+        '/v1/databases/{db_id}/activate',
+        summary='Activate database',
+        response_model=DatabaseOutDetail,
+        responses={
+            400: {'model': JsonError},
+            403: {'model': JsonError},
+            404: {'model': JsonError},
+        },
+    )
+    async def activate_database(
+        self,
+        db_id: _db_id_type,
+        data: DatabaseActivate,
+        context: Context = Depends(get_call_context),
+        config: dict = Depends(get_config),
+        db=Depends(get_db),
+    ):
+        result = await self._action(
+            db_id,
+            data=data,
+            action=DB.activate,
+            is_admin_action=True,
+            context=context,
+            db=db,
+            config=config,
+        )
 
         return result
 
     async def _action(
         self,
-        db_id: str,
-        data: dict,
-        context: Context,
-        client: AsyncConnectClient,
-        db,
+        db_id: _db_id_type,
         action,
+        context: Context,
+        db,
+        data: Optional[BaseModel] = None,
+        is_admin_action: Optional[bool] = False,
+        client: Optional[AsyncConnectClient] = None,
+        config: dict = None,
     ):
+        if is_admin_action and (not is_admin_context(context)):
+            return self._permission_denied_response()
+
         db_document = await DB.retrieve(db_id, db, context)
         if not db_document:
             return self._db_not_found_response()
 
+        data = data.dict() if data else None
         try:
             updated_db_document = await action(
                 db_document,
-                data.dict(),
+                data=data,
                 db=db,
                 context=context,
                 client=client,
+                config=config,
             )
         except ValueError as e:
             return self._service_logic_error_response(e)
 
         return DatabaseOutDetail(**updated_db_document)
-
-    @staticmethod
-    def _db_not_found_response():
-        return responses.JSONResponse({'message': 'Database not found.'}, status_code=404)
-
-    @staticmethod
-    def _service_logic_error_response(e: ValueError):
-        return responses.JSONResponse({'message': str(e)}, status_code=400)
 
     @router.get(
         '/v1/regions',
@@ -181,6 +256,41 @@ class DBaaSWebApplication(WebApplicationBase):
     ):
         region_documents = await Region.list(db)
         return [RegionOut(**region_doc) for region_doc in region_documents]
+
+    @router.post(
+        '/v1/regions',
+        summary='Create region',
+        response_model=RegionOut,
+        responses={400: {'model': JsonError}},
+        status_code=201,
+    )
+    async def create_region(
+        self,
+        data: RegionIn,
+        context: Context = Depends(get_call_context),
+        db=Depends(get_db),
+    ):
+        if not is_admin_context(context):
+            return self._permission_denied_response()
+
+        try:
+            region_document = await Region.create(data.dict(), db=db)
+        except ValueError as e:
+            return self._service_logic_error_response(e)
+
+        return RegionOut(**region_document)
+
+    @staticmethod
+    def _db_not_found_response():
+        return responses.JSONResponse({'message': 'Database not found.'}, status_code=404)
+
+    @staticmethod
+    def _service_logic_error_response(e: ValueError):
+        return responses.JSONResponse({'message': str(e)}, status_code=400)
+
+    @staticmethod
+    def _permission_denied_response():
+        return responses.JSONResponse({'message': 'Permission denied.'}, status_code=403)
 
     @classmethod
     async def on_startup(cls, logger: LoggerAdapter, config: dict):

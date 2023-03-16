@@ -10,7 +10,10 @@ from logging import LoggerAdapter
 from connect.eaas.core.inject.common import get_config
 from fastapi import Depends
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
-from pymongo.errors import CollectionInvalid
+from pymongo.errors import CollectionInvalid, PyMongoError
+
+
+DBException = PyMongoError
 
 
 class Collections:
@@ -24,11 +27,15 @@ class DBEnvVar:
     PASSWORD = 'DB_PASSWORD'
     DB = 'DB_NAME'
 
+    ENCRYPTION_KEY = 'DB_ENCRYPTION_KEY'
+
 
 def get_db(config: dict = Depends(get_config)) -> AsyncIOMotorDatabase:
     db_host = config[DBEnvVar.HOST]
     db_user = urllib.parse.quote(config[DBEnvVar.USER])
     db_password = urllib.parse.quote(config[DBEnvVar.PASSWORD])
+
+    assert config[DBEnvVar.ENCRYPTION_KEY]
 
     connection_str = get_full_connection_string(f'{db_user}:{db_password}@{db_host}')
     client = AsyncIOMotorClient(connection_str, serverSelectionTimeoutMS=5000)

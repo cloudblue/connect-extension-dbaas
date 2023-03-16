@@ -55,14 +55,30 @@ async def test_list_no_account_dbs(db, admin_context):
     ({'cases': [1, 2]}, {'cases': [1, 2], 'case': 2}),
     ({'status': DBStatus.REVIEWING, 'credentials': 1}, {'status': DBStatus.REVIEWING}),
     ({'status': DBStatus.REVIEWING, 'x': 2}, {'status': DBStatus.REVIEWING, 'x': 2}),
-    ({'status': DBStatus.ACTIVE, 'credentials': 2}, {'status': DBStatus.ACTIVE, 'credentials': 2}),
+    ({'status': DBStatus.ACTIVE, 'credentials': 2}, {'status': DBStatus.ACTIVE}),
     (
         {'status': DBStatus.RECONFIGURING, 'credentials': {1: True}},
-        {'status': DBStatus.RECONFIGURING, 'credentials': {1: True}},
+        {'status': DBStatus.RECONFIGURING},
     ),
 ))
 def test__db_document_repr(in_doc, out_doc):
     assert DB._db_document_repr(in_doc) == out_doc
+
+
+@pytest.mark.parametrize('in_doc, out_doc', (
+    ({}, {}),
+    ({1: True, 'a': 'key'}, {1: True, 'a': 'key'}),
+    (
+        {
+            'status': DBStatus.ACTIVE,
+            'credentials': b'gAAAAABkEdPYFZffrdrEU5_jwzsBO-GstLDA2IYs8uAN7jGyQ4KRKw_'
+                           b'CoxytmSLMdTi_NQ49Oe15RWgVtkbEFM2PAZ4wQI9sLQ==',
+        },
+        {'status': DBStatus.ACTIVE, 'credentials': {'1': 1}},
+    ),
+))
+def test__db_document_repr_with_config(in_doc, out_doc, config):
+    assert DB._db_document_repr(in_doc, config) == out_doc
 
 
 @pytest.mark.asyncio
@@ -810,3 +826,121 @@ async def test_reconfigure_error(error_cls, mocker):
 
     with pytest.raises(error_cls):
         await DB.reconfigure(db_document, {}, 'db', 'context', 'client')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('status', (DBStatus.REVIEWING, DBStatus.RECONFIGURING))
+async def test_delete(mocker, db, status):
+    db_document = DBFactory(status=status)
+
+    deleted_event = {'at': 'DT'}
+    await db[Collections.DB].insert_one(db_document)
+
+    repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='delete')
+    dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
+    dt.now.return_value = 'DT'
+
+    result = await DB.delete(db_document, db)
+    db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
+
+    assert result == 'delete'
+
+    db_document['status'] = DBStatus.DELETED
+    db_document['events'].update(deleted_event)
+    repr_p.assert_called_once_with(db_document)
+    assert db_document_from_db['status'] == DBStatus.DELETED
+    assert db_document_from_db['events']['created']
+    assert db_document_from_db['events']['deleted'] == deleted_event
+
+    count_docs = await db[Collections.DB].count_documents({})
+    assert count_docs == 1
+
+
+@pytest.mark.asyncio
+async def test_activate_active_without_credentials(mocker, db, config):
+    db_document = DBFactory(status=DBStatus.ACTIVE)
+    del db_document['credentials']
+
+    await db[Collections.DB].insert_one(db_document)
+
+    repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='aa')
+
+    result = await DB.activate(db_document, db=db, data={}, config=config)
+    db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
+
+    assert result == 'aa'
+
+    db_document['status'] = DBStatus.ACTIVE
+    repr_p.assert_called_once_with(db_document, config=config)
+    assert db_document_from_db['status'] == DBStatus.ACTIVE
+    assert db_document_from_db['events']['created']
+    assert 'activated' not in db_document_from_db['events']
+    assert 'credentials' not in db_document_from_db['events']
+
+    count_docs = await db[Collections.DB].count_documents({})
+    assert count_docs == 1
+
+
+@pytest.mark.asyncio
+async def test_activate_reviewing_without_credentials(config):
+    db_document = DBFactory(status=DBStatus.REVIEWING)
+
+    with pytest.raises(ValueError) as e:
+        await DB.activate(db_document, db='db', data={}, config=config)
+
+    assert str(e.value) == 'Credentials are required for DB activation.'
+
+
+@pytest.mark.asyncio
+async def test_activate_reconfiguring_without_credentials(mocker, db, config):
+    db_document = DBFactory(status=DBStatus.RECONFIGURING)
+    activated_event = {'at': 'DT'}
+
+    await db[Collections.DB].insert_one(db_document)
+
+    repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='ra')
+    dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
+    dt.now.return_value = 'DT'
+
+    result = await DB.activate(db_document, db=db, data={}, config=config)
+    db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
+
+    assert result == 'ra'
+
+    db_document['status'] = DBStatus.ACTIVE
+    db_document['events'].update(activated_event)
+    repr_p.assert_called_once_with(db_document, config=config)
+    assert db_document_from_db['status'] == DBStatus.ACTIVE
+    assert db_document_from_db['events']['created']
+    assert db_document_from_db['events']['activated'] == activated_event
+    assert db_document_from_db['credentials'] == db_document['credentials']
+
+    count_docs = await db[Collections.DB].count_documents({})
+    assert count_docs == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('status', (DBStatus.REVIEWING, DBStatus.RECONFIGURING))
+async def test_activate_with_credentials(mocker, db, status, config):
+    db_document = DBFactory(status=status)
+    activated_event = {'at': 'DT'}
+    credentials = {'a': 1, 'username': 'user', 'b': True}
+
+    await db[Collections.DB].insert_one(db_document)
+
+    mocker.patch('dbaas.services.DB._db_document_repr', return_value='rc')
+    dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
+    dt.now.return_value = 'DT'
+
+    result = await DB.activate(db_document, db=db, data={'credentials': credentials}, config=config)
+    db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
+
+    assert result == 'rc'
+
+    assert db_document_from_db['status'] == DBStatus.ACTIVE
+    assert db_document_from_db['events']['created']
+    assert db_document_from_db['events']['activated'] == activated_event
+    assert DB._decrypt_dict(db_document_from_db['credentials'], config) == credentials
+
+    count_docs = await db[Collections.DB].count_documents({})
+    assert count_docs == 1

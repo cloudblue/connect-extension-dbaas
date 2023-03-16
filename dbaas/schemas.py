@@ -67,4 +67,12 @@ class DatabaseReconfigure(BaseModel):
     case: _DatabaseReconfigureCase
 
 
+class DatabaseActivate(BaseModel):
+    credentials: Optional[dict] = None
+
+
 RegionOut = RefOut
+
+
+class RegionIn(RefIn):
+    name: constr(min_length=1, max_length=64, strict=True)
