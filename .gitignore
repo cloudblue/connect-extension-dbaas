@@ -6,3 +6,4 @@ coverage.xml
 node_modules
 ui/tests/coverage
 .pytest_cache
+.idea

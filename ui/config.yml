@@ -1,0 +1,3 @@
+title: 'Lorem ipsum'
+output: 'dbaas/static'
+port: '3000'
