@@ -658,7 +658,7 @@ async def test_update_full_update_ok(mocker, db):
     dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
     dt.now.return_value = 'DT'
 
-    result = await DB.update(db_document, data, db, 'context', 'client')
+    result = await DB.update(db_document, data, db, 'context', 'client', config='config')
     db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
 
     assert result == 'full'
@@ -787,7 +787,7 @@ async def test_reconfigure_by_common_installation(mocker, db):
     dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
     dt.now.return_value = 'DT'
 
-    result = await DB.reconfigure(db_document, data, db, context, 'client')
+    result = await DB.reconfigure(db_document, data, db, context, 'client', config='config')
     db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
 
     assert result == 'common'
@@ -840,7 +840,7 @@ async def test_delete(mocker, db, status):
     dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
     dt.now.return_value = 'DT'
 
-    result = await DB.delete(db_document, db)
+    result = await DB.delete(db_document, db, config='config')
     db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
 
     assert result == 'delete'
@@ -865,7 +865,7 @@ async def test_activate_active_without_credentials(mocker, db, config):
 
     repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='aa')
 
-    result = await DB.activate(db_document, db=db, data={}, config=config)
+    result = await DB.activate(db_document, db=db, data={}, config=config, client='client')
     db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
 
     assert result == 'aa'
