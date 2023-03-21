@@ -91,6 +91,7 @@ class DB:
         db: AsyncIOMotorDatabase,
         context: Context,
         client: AsyncConnectClient,
+        **kwargs,
     ) -> dict:
         updated_db_document = await cls._update(db_document, data, db, context, client)
 
