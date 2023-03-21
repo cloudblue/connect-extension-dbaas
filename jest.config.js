@@ -19,7 +19,7 @@ module.exports = {
 
 
   testMatch: [
-    '<rootDir>/ui/tests(**/*\\.spec.(js|jsx|ts|tsx)|**/__tests__/*.(js|jsx|ts|tsx))',
+    '<rootDir>/ui/(**/*\\.spec.(js|jsx|ts|tsx)|**/__tests__/*.(js|jsx|ts|tsx))',
   ],
 
   collectCoverage: true,
