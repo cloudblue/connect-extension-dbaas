@@ -1,6 +1,6 @@
 <template lang="pug">
 div
-  c-simple-toolbar._mb_16
+  ez-toolbar._mb_16
     template(#actions="")
       c-button(
         mode="solid",
@@ -9,7 +9,7 @@ div
         @click="openCreationDialog",
       )
         template(#icon="")
-          c-simple-svg(
+          ez-svg(
             path="add",
             color="white",
             size="18",
@@ -28,7 +28,7 @@ div
     br
     | For more information, please refer to our documentation.
 
-  c-simple-table(
+  ez-table(
     v-else,
     v-model="list",
     :loading="loading",
@@ -66,40 +66,31 @@ import {
 import databases from '~api/databases';
 
 import cScreenPlaceholder from '~components/cScreenPlaceholder.vue';
-import cSimpleTable from '~components/cSimpleTable.vue';
 import cStatus from '~components/cStatus.vue';
 import cButton from '~components/cButton.vue';
-import cSimpleToolbar from '~components/cSimpleToolbar.vue';
-import cSimpleSvg from '~components/cSimpleSvg.vue';
+
+import ezTable from '~components/ezTable.vue';
+import ezToolbar from '~components/ezToolbar.vue';
+import ezSvg from '~components/ezSvg.vue';
 
 import DatabaseDialog from '~views/CreateEditDialog.vue';
 
 
 export default {
   components: {
-    DatabaseDialog,
     cScreenPlaceholder,
-    cSimpleTable,
-    cSimpleToolbar,
     cStatus,
     cButton,
-    cSimpleSvg,
+    ezSvg,
+    ezTable,
+    ezToolbar,
+    DatabaseDialog,
   },
 
   data: () => ({
     dialogOpened: false,
     loading: false,
     list: [],
-    acceptTermsAndConds: false,
-    workload: 'small',
-    region: null,
-    regions: [
-      'North America',
-      'South America',
-      'West Europe',
-      'East Europe',
-      'Asia',
-    ],
   }),
 
   computed: {

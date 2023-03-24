@@ -1,13 +1,13 @@
 <template lang="pug">
 div
-  c-simple-loader(
+  ez-loader(
     v-if="loading",
     size="70",
     fullscreen,
     move-up="24"
   )
 
-  c-simple-toolbar(
+  ez-toolbar(
     v-if="!loading",
     :on-back="onBack",
     :title="localItem.name || ''",
@@ -22,7 +22,7 @@ div
         @click="openReconfigureDialog",
       )
         template(#icon="")
-          c-simple-svg(
+          ez-svg(
             path="chat_bubble_outline",
             :color="localItem.status !== 'active' ? '#bdbdbd' : 'white'",
             size="18",
@@ -36,7 +36,7 @@ div
 
   .container(v-if="!loading")
     .two-columns
-      c-card(title="General")
+      ui-card(title="General")
         .item-row
           .item-label ID
           .item-value {{ localItem.id }}
@@ -70,7 +70,7 @@ div
           .item-label Updated
           .item-value {{ localItem.events.updated.at | ddmmyyyy }}
 
-      c-card(title="Technical Contact")
+      ui-card(title="Technical Contact")
         .detail-item
           .detail-item-head.item-label._mb_8 User
           .detail-item__text {{ localItem.tech_contact.name }}
@@ -80,7 +80,7 @@ div
           .detail-item-head.item-label._mb_8 Planned database workload
           .detail-item__text {{ localItem.description }}
 
-    c-card._mt_16(title="Access information", v-if="localItem.credentials")
+    ui-card._mt_16(title="Access information", v-if="localItem.credentials")
       .item-row
         .item-label URL
         .item-value.capitalize {{ localItem.credentials.host || `–` }}
@@ -137,10 +137,11 @@ import {
 
 import cStatus from '~components/cStatus.vue';
 import cIcon from '~components/cIcon.vue';
-import cSimpleLoader from '~components/cSimpleLoader.vue';
-import cSimpleToolbar from '~components/cSimpleToolbar.vue';
 import cButton from '~components/cButton.vue';
-import cSimpleSvg from '~components/cSimpleSvg.vue';
+
+import ezLoader from '~components/ezLoader.vue';
+import ezToolbar from '~components/ezToolbar.vue';
+import ezSvg from '~components/ezSvg.vue';
 
 import DatabaseDialog from '~views/CreateEditDialog.vue';
 import ReconfDialog from '~views/ReconfDialog.vue';
@@ -164,10 +165,10 @@ export default {
   components: {
     cStatus,
     cIcon,
-    cSimpleLoader,
-    cSimpleToolbar,
     cButton,
-    cSimpleSvg,
+    ezLoader,
+    ezSvg,
+    ezToolbar,
     DatabaseDialog,
     ReconfDialog,
   },
@@ -229,7 +230,7 @@ export default {
   filters: {
     ddmmyyyy: (dateString) => {
       const date = new Date(dateString);
-      const dd = norm(date.getUTCDate() + 1);
+      const dd = norm(date.getUTCDate());
       const mm = norm(date.getUTCMonth() + 1);
       const yyyy = date.getUTCFullYear();
 

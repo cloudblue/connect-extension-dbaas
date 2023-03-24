@@ -4,17 +4,11 @@ import App from './App.vue';
 
 import createApp, {
   Card,
-  Pad,
-  Tab,
-  Tabs,
 } from '@cloudblueconnect/connect-ui-toolkit';
 
 
 createApp({
-  'c-card': Card,
-  'c-tabs': Tabs,
-  'c-tab': Tab,
-  'c-pad': Pad,
+  'ui-card': Card,
 }).then(connectBus => {
   store.registerModule('bus', {
     namespaced: true,

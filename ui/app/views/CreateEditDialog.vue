@@ -1,10 +1,10 @@
 <template lang="pug">
-c-simple-dialog(
+ez-dialog(
   v-model="dialogOpened",
   width="800",
   title="Request database",
 )
-  c-card(title="General")
+  ui-card(title="General")
     // CREATE MODE
     div(v-if="!isEdit")
       .two-columns
@@ -44,7 +44,7 @@ c-simple-dialog(
 
   ._mt_24
 
-  c-card(title="Technical contact")
+  ui-card(title="Technical contact")
     .detail-item
       .detail-item-head.item-label._mb_8 User
       .detail-item__text
@@ -106,8 +106,9 @@ import {
   template,
 } from '~utils';
 
-import cSimpleDialog from '~components/cSimpleDialog.vue';
 import cButton from '~components/cButton.vue';
+
+import ezDialog from '~components/ezDialog.vue';
 
 import databases from '~api/databases';
 import regions from '~api/regions';
@@ -115,7 +116,7 @@ import context from '~api/context';
 import accountUsers from '~api/account-users';
 
 
-const initialForm = () => ({
+export const initialForm = () => ({
   name: '',
   description: '',
   workload: 'small',
@@ -123,7 +124,7 @@ const initialForm = () => ({
   region: { id: null },
 });
 
-const prepareForm = (isEdit, v) => template({
+export const prepareForm = (isEdit, v) => template({
   name: ['name'],
   description: ['description'],
   tech_contact: propTo('tech_contact', pick(['id'])),
@@ -135,7 +136,7 @@ const prepareForm = (isEdit, v) => template({
 
 export default {
   components: {
-    cSimpleDialog,
+    ezDialog,
     cButton,
   },
 
@@ -155,7 +156,7 @@ export default {
 
   computed: {
     isEdit: ({ item }) => Boolean(item),
-    allowSaving: ({ isEdit, acceptTermsAndConds, form }) => (
+    allowSaving: ({ isEdit, acceptTermsAndConds, form }) => Boolean((
       isEdit
       && form.name
       && form.tech_contact.id
@@ -165,14 +166,12 @@ export default {
       && form.name
       && form.region.id
       && form.tech_contact.id
-    ),
+    )),
   },
 
   methods: {
     close() {
       this.dialogOpened = false;
-      this.$emit('update:mode', 'create');
-      this.$emit('update:item', null);
       this.form = initialForm();
       this.users = [];
       this.regions = [];

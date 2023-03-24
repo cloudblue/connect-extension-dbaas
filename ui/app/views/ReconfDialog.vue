@@ -1,10 +1,10 @@
 <template lang="pug">
-c-simple-dialog(
+ez-dialog(
   v-model="dialogOpened",
   width="800",
   title="Request Reconfiguration",
 )
-  c-card(title="Type")
+  ui-card(title="Type")
     .two-columns
       .choice-card(
         :class="{ 'choice-card__chosen': form.subject === 'regenerate_access' }",
@@ -36,7 +36,7 @@ c-simple-dialog(
 
   ._mt_24
 
-  c-card(title="Additional Information")
+  ui-card(title="Additional Information")
     .detail-item
       .detail-item-head.item-label._mb_8 Please describe details of your request (optional)
       .detail-item__text
@@ -63,8 +63,9 @@ import {
   clone,
 } from 'ramda';
 
-import cSimpleDialog from '~components/cSimpleDialog.vue';
 import cButton from '~components/cButton.vue';
+
+import ezDialog from '~components/ezDialog.vue';
 
 import databases from '~api/databases';
 
@@ -76,8 +77,8 @@ const initialForm = () => ({
 
 export default {
   components: {
-    cSimpleDialog,
     cButton,
+    ezDialog,
   },
 
   props: {
