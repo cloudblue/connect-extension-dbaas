@@ -9,6 +9,7 @@ from typing import Optional
 
 from connect.eaas.core.decorators import (
     devops_pages,
+    proxied_connect_api,
     router,
     web_app,
 )
@@ -53,6 +54,10 @@ async def handle_db_exceptions_mw(request: Request, call_next) -> responses.Resp
     'label': 'Databases',
     'url': '/static/index.html',
 }])
+@proxied_connect_api([
+    '/public/v1/auth/context',
+    '/public/v1/accounts/',
+])
 class DBaaSWebApplication(WebApplicationBase):
     @classmethod
     def get_middlewares(cls):

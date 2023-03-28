@@ -14,7 +14,7 @@ readme = "./README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4"
-connect-eaas-core = ">=27.3,<28"
+connect-eaas-core = ">=27.8,<28"
 motor = "3.*"
 cryptography = "39.*"
 
