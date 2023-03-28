@@ -83,15 +83,15 @@ div
     c-card._mt_16(title="Access information", v-if="localItem.credentials")
       .item-row
         .item-label URL
-        .item-value.capitalize {{ localItem.credentials.host || `–` }}
+        .item-value {{ localItem.credentials.host || `–` }}
 
       .item-row
         .item-label Username
-        .item-value.capitalize {{ localItem.credentials.username }}
+        .item-value {{ localItem.credentials.username }}
 
       .item-row
         .item-label Password
-        .item-value.capitalize {{ hidePassword ? '••••••••••••' : localItem.credentials.password }}
+        .item-value {{ hidePassword ? '••••••••••••' : localItem.credentials.password }}
           c-icon.pointer._ml_16(
             :icon="hidePassword ? visibilityIcon.on : visibilityIcon.off",
             size="18",
@@ -101,19 +101,19 @@ div
 
       .item-row
         .item-label SSL
-        .item-value 'Enabled'
+        .item-value Enabled
 
   database-dialog(
     v-model="isDialogOpened",
     mode="edit",
     :item="localItem",
-    @saved="load",
+    @closed="load",
   )
 
   reconf-dialog(
     v-model="isReconfDialogOpened",
     :item="localItem",
-    @saved="load",
+    @closed="load",
   )
 </template>
 
@@ -229,7 +229,7 @@ export default {
   filters: {
     ddmmyyyy: (dateString) => {
       const date = new Date(dateString);
-      const dd = norm(date.getUTCDate() + 1);
+      const dd = norm(date.getUTCDate());
       const mm = norm(date.getUTCMonth() + 1);
       const yyyy = date.getUTCFullYear();
 

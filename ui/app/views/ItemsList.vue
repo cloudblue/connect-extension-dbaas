@@ -90,16 +90,6 @@ export default {
     dialogOpened: false,
     loading: false,
     list: [],
-    acceptTermsAndConds: false,
-    workload: 'small',
-    region: null,
-    regions: [
-      'North America',
-      'South America',
-      'West Europe',
-      'East Europe',
-      'Asia',
-    ],
   }),
 
   computed: {

@@ -10,11 +10,13 @@ c-simple-dialog(
       .two-columns
         .detail-item._mt_0
           .detail-item-head.item-label._mb_8 Name
+            sup.red._ml_4 *
           .detail-item__text
             input(required, v-model="form.name", type="text", materialize)
 
         .detail-item._mt_0
           .detail-item-head.item-label._mb_8 Region
+            sup.red._ml_4 *
           .detail-item__text
             select(required, materialize, v-model="form.region.id")
               option(disabled) Choose region
@@ -39,6 +41,7 @@ c-simple-dialog(
     // EDIT MODE
     .detail-item._mt_0(v-if="isEdit")
       .detail-item-head.item-label._mb_8 Name
+        sup.red._ml_4 *
       .detail-item__text
         input(required, v-model="form.name", type="text", materialize)
 
@@ -47,6 +50,7 @@ c-simple-dialog(
   c-card(title="Technical contact")
     .detail-item
       .detail-item-head.item-label._mb_8 User
+        sup._ml_4.red *
       .detail-item__text
         select(materialize, v-model="form.tech_contact.id")
           option(disabled) Choose user
@@ -58,6 +62,7 @@ c-simple-dialog(
 
     .detail-item
       .detail-item-head.item-label._mb_8 Planned database workload
+        sup.red._ml_4 *
       .detail-item__text
         textarea(v-model="form.description", materialize)
 
@@ -115,7 +120,7 @@ import context from '~api/context';
 import accountUsers from '~api/account-users';
 
 
-const initialForm = () => ({
+export const initialForm = () => ({
   name: '',
   description: '',
   workload: 'small',
@@ -155,24 +160,25 @@ export default {
 
   computed: {
     isEdit: ({ item }) => Boolean(item),
-    allowSaving: ({ isEdit, acceptTermsAndConds, form }) => (
+    allowSaving: ({ isEdit, acceptTermsAndConds, form }) => Boolean((
       isEdit
       && form.name
+      && form.description
       && form.tech_contact.id
     ) || (
       !isEdit
       && acceptTermsAndConds
       && form.name
+      && form.description
       && form.region.id
       && form.tech_contact.id
-    ),
+    )),
   },
 
   methods: {
     close() {
       this.dialogOpened = false;
-      this.$emit('update:mode', 'create');
-      this.$emit('update:item', null);
+      this.$emit('closed');
       this.form = initialForm();
       this.users = [];
       this.regions = [];
@@ -218,6 +224,12 @@ export default {
 </script>
 
 <style lang="stylus">
+@import '~styles/common';
+
+.red {
+  color: $nice-red;
+}
+
 .two-columns {
   display: flex;
   flex-direction: row;
