@@ -23,11 +23,28 @@ class Collections:
 
 class DBEnvVar:
     HOST = 'DB_HOST'
-    USER = 'DB_USER'
-    PASSWORD = 'DB_PASSWORD'
+    """ `DB_HOST` - MongoDB location accessible from Connect platform, e.x. `c0.x.mongodb.net` """
+
     DB = 'DB_NAME'
+    """ `DB_NAME` - MongoDB DB name, to store the data of this extension, e.x. `db` """
+
+    USER = 'DB_USER'
+    """ `DB_USER` - MongoDB username with read and write access to the `DB_NAME`, e.x. `dev` """
+
+    PASSWORD = 'DB_PASSWORD'
+    """ `DB_PASSWORD` - MongoDB user password from the MongoDB `DB_USER` """
 
     ENCRYPTION_KEY = 'DB_ENCRYPTION_KEY'
+    """
+    `DB_ENCRYPTION_KEY` - Client Encryption/Decryption secret string
+
+    ```python
+    # pip install cryptography
+
+    from cryptography import fernet
+    DB_ENCRYPTION_KEY = fernet.Fernet.generate_key().hex()
+    ```
+    """
 
 
 def get_db(config: dict = Depends(get_config)) -> AsyncIOMotorDatabase:

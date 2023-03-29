@@ -1,9 +1,9 @@
 {
   "name": "DBaaS",
-  "description": "On-demand provisioning of databases as a service for other Extension projects",
-  "version": "0.1.0",
+  "description": "On-demand provisioning of cloud-based database storages as a service.",
+  "version": "0.2.0",
   "audience": ["reseller", "distributor", "vendor"],
-  "readme_url": "https://github.com/cloudblue/connect-extension-dbaas/blob/master/README.md",
-  "changelog_url": "https://github.com/cloudblue/connect-extension-dbaas/blob/master/CHANGELOG.md",
+  "readme_url": "https://github.com/cloudblue/connect-extension-dbaas/blob/0.2.0/README.md",
+  "changelog_url": "https://github.com/cloudblue/connect-extension-dbaas/blob/0.2.0/CHANGELOG.md",
   "icon": "googleExtensionBaseline"
 }

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "dbaas"
-version = "0.1.0"
-description = "On-demand provisioning of databases as a service for other Extension projects"
+version = "0.0.0"
+description = "On-demand provisioning of cloud-based database storages as a service."
 authors = ["Ingram Micro"]
 license = "Apache Software License 2.0"
 packages = [
