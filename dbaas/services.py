@@ -381,7 +381,7 @@ class DB:
 
                 db_document['cases'] = [cls._prepare_helpdesk_case(helpdesk_case)]
 
-                db_coll = cls._db_collection_from_db_session(db_session)
+                db_coll = cls._db_collection_from_db_session(db_session, config)
                 await db_coll.update_one(
                     {'id': db_document['id']},
                     {'$set': {'cases': db_document['cases']}},
