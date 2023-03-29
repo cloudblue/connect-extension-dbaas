@@ -229,7 +229,7 @@ export default {
   filters: {
     ddmmyyyy: (dateString) => {
       const date = new Date(dateString);
-      const dd = norm(date.getUTCDate() + 1);
+      const dd = norm(date.getUTCDate());
       const mm = norm(date.getUTCMonth() + 1);
       const yyyy = date.getUTCFullYear();
 

@@ -69,6 +69,13 @@ import cButton from '~components/cButton.vue';
 import databases from '~api/databases';
 
 
+const SUBJECTS = {
+  regenerate_access: 'Regenerate Access Information for',
+  change_sizing: 'Change sizing of',
+  drop_db: 'Delete',
+  other: 'Perform some action on',
+};
+
 const initialForm = () => ({
   subject: '',
   description: '',
@@ -99,10 +106,17 @@ export default {
     close() {
       this.dialogOpened = false;
       this.form = initialForm();
+      this.$emit('closed');
     },
 
     async save() {
-      const item = await databases.reconfigure(this.item.id, { case: this.form });
+      const item = await databases.reconfigure(this.item.id, {
+        case: {
+          ...this.form,
+
+          subject: `${SUBJECTS[this.form.subject]} ${this.item.id}`,
+        },
+      });
       this.$emit('saved', item);
       this.close();
     },
