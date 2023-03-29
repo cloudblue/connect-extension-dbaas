@@ -399,7 +399,7 @@ class DB:
         logger: RequestLogger,
         iteration: int = 0,
     ):
-        db_coll = cls._db_collection_from_db_session(db_session)
+        db_coll = cls._db_collection_from_db_session(db_session, config)
 
         try:
             db_document['id'] = cls._generate_id(config)
@@ -422,8 +422,8 @@ class DB:
         return db_document
 
     @classmethod
-    def _db_collection_from_db_session(cls, db_session):
-        return db_session.client.db[cls.COLLECTION]
+    def _db_collection_from_db_session(cls, db_session, config):
+        return db_session.client[config[DBEnvVar.DB]][cls.COLLECTION]
 
     @staticmethod
     def _generate_id(config: dict) -> str:
