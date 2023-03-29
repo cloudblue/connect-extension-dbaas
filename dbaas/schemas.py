@@ -8,7 +8,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, constr, Field
 
-from dbaas.constants import DBWorkload
+from dbaas.constants import DBAction, DBWorkload
 
 
 class JsonError(BaseModel):
@@ -23,7 +23,7 @@ BaseRefOut = RefIn
 
 
 class RefOut(BaseRefOut):
-    name: Optional[str] = None
+    name: Optional[str]
 
 
 class TechContactOut(RefOut):
@@ -33,7 +33,7 @@ class TechContactOut(RefOut):
 class DatabaseInUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=128)
     description: Optional[str] = Field(None, max_length=512)
-    tech_contact: Optional[RefIn] = None
+    tech_contact: Optional[RefIn]
 
 
 class DatabaseInCreate(DatabaseInUpdate):
@@ -49,26 +49,30 @@ class DatabaseOutList(DatabaseInCreate):
     region: RefOut
     tech_contact: RefOut
     status: str
-    case: Optional[RefIn] = None
-    events: Optional[dict] = None
+    case: Optional[RefIn]
+    events: Optional[dict]
+
+
+class _Credentials(BaseModel):
+    host: str
+    username: str
+    password: str
+    name: Optional[str]
 
 
 class DatabaseOutDetail(DatabaseOutList):
     tech_contact: TechContactOut
-    credentials: Optional[dict] = None
-
-
-class _DatabaseReconfigureCase(BaseModel):
-    subject: constr(min_length=1, max_length=300, strict=True)
-    description: Optional[str] = Field('DB reconfiguration.', max_length=1000)
+    credentials: Optional[_Credentials]
 
 
 class DatabaseReconfigure(BaseModel):
-    case: _DatabaseReconfigureCase
+    action: Literal[DBAction.DELETE, DBAction.UPDATE]
+    details: Optional[str] = Field(None, max_length=700)
 
 
 class DatabaseActivate(BaseModel):
-    credentials: Optional[dict] = None
+    workload: Optional[Literal[DBWorkload.all()]]
+    credentials: Optional[_Credentials]
 
 
 RegionOut = RefOut

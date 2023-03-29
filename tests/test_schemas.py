@@ -63,21 +63,15 @@ def test_database_in_update_fail(data):
 
 @pytest.mark.parametrize('data', [
     {
-        'case': {
-            'subject': 'abc',
-            'description': None,
-        },
+        'action': 'update',
+        'details': 'need more space',
     },
     {
-        'case': {
-            'subject': 'x' * 300,
-            'description': 'y' * 1000,
-        },
+        'action': 'delete',
     },
     {
-        'case': {
-            'subject': 'a',
-        },
+        'action': 'update',
+        'details': 'x' * 700,
     },
 ])
 def test_database_reconfigure_ok(data):
@@ -86,17 +80,16 @@ def test_database_reconfigure_ok(data):
 
 @pytest.mark.parametrize('data', [
     {},
-    {
-        'subject': 'abc',
-        'description': None,
-    },
+    {'details': None},
     {'name': 'new'},
-    {'case': None},
+    {'action': 'create'},
     {
-        'case': {
-            'subject': 'x' * 301,
-            'description': 'y' * 1001,
-        },
+        'action': 'other',
+        'details': 'want a unicorn',
+    },
+    {
+        'action': 'update',
+        'details': 'y' * 701,
     },
 ])
 def test_database_reconfigure_fail(data):
@@ -106,16 +99,26 @@ def test_database_reconfigure_fail(data):
 
 @pytest.mark.parametrize('data', [
     {},
+    {'other': 'some'},
     {
-        'other': 'some',
         'credentials': None,
+        'workload': None,
     },
-    {'credentials': {}},
     {
         'credentials': {
             'username': 'user',
             'password': 'pswd',
+            'host': 'host',
         },
+    },
+    {
+        'credentials': {
+            'username': 'user@abc',
+            'password': 'pswd%1.!',
+            'host': 'host.host.host',
+            'name': 'db',
+        },
+        'workload': 'large',
     },
 ])
 def test_database_activate_ok(data):
@@ -125,6 +128,15 @@ def test_database_activate_ok(data):
 @pytest.mark.parametrize('data', [
     {'credentials': [1, 2]},
     {'credentials': 5},
+    {'workload': 'new'},
+    {
+        'credentials': {
+            'username': 'user@abc',
+            'password': 'pswd%1.!',
+            'name': 'db',
+        },
+        'workload': 'large',
+    },
 ])
 def test_database_activate_fail(data):
     with pytest.raises(ValueError):
@@ -233,7 +245,11 @@ def test_database_out_detail():
         tech_contact__name='abc',
         tech_contact__email='user@user.com',
         events={'passed': {'by': 2}},
-        credentials={'password': 'qwerty'},
+        credentials={
+            'username': 'some',
+            'host': 'some',
+            'password': 'qwerty',
+        },
     )
 
     assert jsonable_encoder(DatabaseOutDetail(case=CaseFactory(id='CS-100'), **db)) == {
@@ -246,7 +262,12 @@ def test_database_out_detail():
         'status': 'active',
         'case': {'id': 'CS-100'},
         'events': {'passed': {'by': 2}},
-        'credentials': {'password': 'qwerty'},
+        'credentials': {
+            'username': 'some',
+            'host': 'some',
+            'password': 'qwerty',
+            'name': None,
+        },
     }
 
 

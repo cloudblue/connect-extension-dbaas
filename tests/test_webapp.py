@@ -10,6 +10,7 @@ from connect.client import ClientError
 from fastapi.encoders import jsonable_encoder
 from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 
+from dbaas.constants import DBAction
 from dbaas.schemas import (
     DatabaseInCreate,
     DatabaseInUpdate,
@@ -243,12 +244,13 @@ def test_update_database_422(api_client, mocker, config):
     update_p.assert_not_called()
 
 
-def test_reconfigure_database_200(api_client, mocker, config, common_context):
+@pytest.mark.parametrize('action', (DBAction.DELETE, DBAction.UPDATE))
+def test_reconfigure_database_200(api_client, mocker, config, common_context, action):
     db_document = DBFactory()
     db_document_id = db_document['id']
     retrieve_p = mocker.patch('dbaas.webapp.DB.retrieve', return_value={'b': True})
     reconfigure_p = mocker.patch('dbaas.webapp.DB.reconfigure', return_value=db_document)
-    data = {'case': {'subject': 'Reconf', 'description': None}}
+    data = {'action': action}
 
     response = api_client.post(f'{DB_API}/{db_document_id}/reconfigure', json=data)
     assert response.status_code == 200
@@ -257,7 +259,7 @@ def test_reconfigure_database_200(api_client, mocker, config, common_context):
     retrieve_p.assert_called_once_with(db_document_id, DB_DEP_MOCK, common_context)
     reconfigure_p.assert_called_once_with(
         {'b': True},
-        data=data,
+        data={'action': action, 'details': None},
         db=DB_DEP_MOCK,
         context=common_context,
         client=INSTALLATION_CLIENT_DEP_MOCK,
@@ -273,7 +275,7 @@ def test_reconfigure_database_400(api_client, mocker, config, common_context):
     db_document_id = db_document['id']
     retrieve_p = mocker.patch('dbaas.webapp.DB.retrieve', return_value={'some': 'mock'})
     reconfigure_p = mocker.patch('dbaas.webapp.DB.reconfigure', side_effect=raise_ve)
-    data = {'case': {'subject': 'Reconf', 'description': 'x'}}
+    data = {'action': DBAction.UPDATE, 'details': 'x'}
 
     response = api_client.post(f'{DB_API}/{db_document_id}/reconfigure', json=data)
     assert response.status_code == 400
@@ -293,7 +295,7 @@ def test_reconfigure_database_400(api_client, mocker, config, common_context):
 def test_reconfigure_database_404(api_client, mocker, config, common_context):
     retrieve_p = mocker.patch('dbaas.webapp.DB.retrieve', return_value=None)
     reconfigure_p = mocker.patch('dbaas.webapp.DB.reconfigure')
-    data = {'case': {'subject': 'test'}}
+    data = {'action': DBAction.DELETE}
 
     response = api_client.post(f'{DB_API}/DB-789/reconfigure', json=data)
     assert response.status_code == 404
@@ -320,7 +322,7 @@ def test_activate_database_200(admin_api_client, mocker, config, admin_context):
     db_document_id = db_document['id']
     retrieve_p = mocker.patch('dbaas.webapp.DB.retrieve', return_value={'c': True})
     activate_p = mocker.patch('dbaas.webapp.DB.activate', return_value=db_document)
-    data = {'credentials': {}}
+    data = {}
 
     response = admin_api_client.post(f'{DB_API}/{db_document_id}/activate', json=data)
     assert response.status_code == 200
@@ -329,7 +331,7 @@ def test_activate_database_200(admin_api_client, mocker, config, admin_context):
     retrieve_p.assert_called_once_with(db_document_id, DB_DEP_MOCK, admin_context)
     activate_p.assert_called_once_with(
         {'c': True},
-        data=data,
+        data={'credentials': None, 'workload': None},
         db=DB_DEP_MOCK,
         context=admin_context,
         client=None,
@@ -345,7 +347,15 @@ def test_activate_database_400(admin_api_client, mocker, config, admin_context):
     db_document_id = db_document['id']
     retrieve_p = mocker.patch('dbaas.webapp.DB.retrieve', return_value={'abc': 'x'})
     activate_p = mocker.patch('dbaas.webapp.DB.activate', side_effect=raise_ve)
-    data = {'credentials': {'username': 'user'}}
+    data = {
+        'credentials': {
+            'username': 'user',
+            'password': '!',
+            'host': 'example.com',
+            'name': None,
+        },
+        'workload': None,
+    }
 
     response = admin_api_client.post(f'{DB_API}/{db_document_id}/activate', json=data)
     assert response.status_code == 400

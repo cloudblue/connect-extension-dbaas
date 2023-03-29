@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock
 import pytest
 from connect.client import ClientError
 
+from dbaas.constants import DBAction, DBWorkload
 from dbaas.services import ConnectHelpdeskCase
 
 from tests.factories import CaseFactory, DBFactory
@@ -19,7 +20,14 @@ async def test_create_from_db_document_client_error(mocker):
     def raise_err(*a, **kw):
         raise ClientError(status_code=503)
 
-    db_document = DBFactory(id='PGDB-100', tech_contact__id='UR-456')
+    db_document = DBFactory(
+        id='PGDB-100',
+        name='Richard Watts',
+        description='lost',
+        workload=DBWorkload.MEDIUM,
+        tech_contact__id='UR-456',
+        region__id='eu-west',
+    )
     create_p = mocker.patch('dbaas.services.ConnectHelpdeskCase.create', side_effect=raise_err)
     inst_p = mocker.patch(
         'dbaas.services.ConnectInstallation.get_extension_owner_id', return_value='VA-123',
@@ -28,21 +36,25 @@ async def test_create_from_db_document_client_error(mocker):
     with pytest.raises(ClientError):
         await ConnectHelpdeskCase.create_from_db_document(
             db_document,
-            subject='Request to create PGDB-100.',
+            action=DBAction.UPDATE,
             description='Some desc',
             installation='installation',
             client='client',
         )
 
     data = {
-        'subject': 'Request to create PGDB-100.',
-        'description': 'Some desc',
+        'subject': 'Infra PGDB-100 update Richard Watts',
+        'description': '\nID: PGDB-100\n'
+                       'Name: Richard Watts\n'
+                       'Action: update\n'
+                       'Workload: medium\n'
+                       'Region: eu-west\n'
+                       'Contact: UR-456\n\n'
+                       'Some desc\n',
         'priority': 2,
-        'type': 'business',
+        'type': 'technical',
         'issuer': {
-            'recipients': [
-                {'id': 'UR-456'},
-            ],
+            'recipients': [{'id': 'UR-456'}],
         },
         'receiver': {
             'account': {'id': 'VA-123'},
@@ -53,8 +65,16 @@ async def test_create_from_db_document_client_error(mocker):
 
 
 @pytest.mark.asyncio
-async def test_create_from_db_document_ok(mocker):
-    db_document = DBFactory(id='DB-123', tech_contact__id='UR-123')
+@pytest.mark.parametrize('action', (DBAction.UPDATE, DBAction.DELETE))
+async def test_create_from_db_document_ok(mocker, action):
+    db_document = DBFactory(
+        id='DB-123',
+        name='abc',
+        description='lost',
+        workload=DBWorkload.SMALL,
+        tech_contact__id='UR-123',
+        region__id='us-central',
+    )
     case = CaseFactory()
     create_p = mocker.patch(
         'dbaas.services.ConnectHelpdeskCase.create',
@@ -66,8 +86,8 @@ async def test_create_from_db_document_ok(mocker):
 
     result = await ConnectHelpdeskCase.create_from_db_document(
         db_document,
-        subject='Request to create DB-123.',
-        description='desc test',
+        action=action,
+        description='-',
         installation='installation',
         client='client',
     )
@@ -75,14 +95,18 @@ async def test_create_from_db_document_ok(mocker):
     assert result == case
 
     data = {
-        'subject': 'Request to create DB-123.',
-        'description': 'desc test',
+        'subject': f'Infra DB-123 {action} abc',
+        'description': '\nID: DB-123\n'
+                       'Name: abc\n'
+                       f'Action: {action}\n'
+                       'Workload: small\n'
+                       'Region: us-central\n'
+                       'Contact: UR-123\n\n'
+                       '-\n',
         'priority': 2,
-        'type': 'business',
+        'type': 'technical',
         'issuer': {
-            'recipients': [
-                {'id': 'UR-123'},
-            ],
+            'recipients': [{'id': 'UR-123'}],
         },
         'receiver': {
             'account': {'id': 'PA-123'},
