@@ -25,9 +25,10 @@ describe('ItemDetails', () => {
         editingItem: null,
         localItem: null,
 
-        visibilityIcon: {
+        icons: {
           on: 'test-file-stub',
           off: 'test-file-stub',
+          copy: 'test-file-stub',
         },
       });
     });

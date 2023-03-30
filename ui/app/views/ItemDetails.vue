@@ -83,25 +83,49 @@ div
     c-card._mt_16(title="Access information", v-if="localItem.credentials")
       .item-row
         .item-label URL
-        .item-value.capitalize {{ localItem.credentials.host || `–` }}
-
-      .item-row
-        .item-label Username
-        .item-value.capitalize {{ localItem.credentials.username }}
-
-      .item-row
-        .item-label Password
-        .item-value.capitalize {{ hidePassword ? '••••••••••••' : localItem.credentials.password }}
+        .item-value {{ hidePassword ? databaseUrl.hidePassword : databaseUrl.showPassword }}
           c-icon.pointer._ml_16(
-            :icon="hidePassword ? visibilityIcon.on : visibilityIcon.off",
+            :icon="hidePassword ? icons.on : icons.off",
             size="18",
             color="black",
             @click="hidePassword = !hidePassword",
           )
 
+          c-icon.pointer._ml_16(
+            :icon="icons.copy",
+            size="18",
+            color="black",
+            @click="$copyText(databaseUrl.showPassword)",
+          )
+
+      .item-row
+        .item-label DB Name
+        .item-value {{ localItem.credentials.name || '–' }}
+
+      .item-row
+        .item-label Username
+        .item-value {{ localItem.credentials.username }}
+
+      .item-row
+        .item-label Password
+        .item-value {{ hidePassword ? '••••••••••••' : localItem.credentials.password }}
+          c-icon.pointer._ml_16(
+            :icon="hidePassword ? icons.on : icons.off",
+            size="18",
+            color="black",
+            @click="hidePassword = !hidePassword",
+          )
+
+          c-icon.pointer._ml_16(
+            :icon="icons.copy",
+            size="18",
+            color="black",
+            @click="$copyText(localItem.credentials.password)",
+          )
+
       .item-row
         .item-label SSL
-        .item-value 'Enabled'
+        .item-value Required
 
   database-dialog(
     v-model="isDialogOpened",
@@ -131,6 +155,7 @@ import {
 } from 'ramda';
 
 import {
+  googleContentCopyBaseline,
   googleVisibilityBaseline,
   googleVisibilityOffBaseline,
 } from '@cloudblueconnect/material-svg';
@@ -187,11 +212,28 @@ export default {
     editingItem: null,
     localItem: null,
 
-    visibilityIcon: {
+    icons: {
       on: googleVisibilityBaseline,
       off: googleVisibilityOffBaseline,
+      copy: googleContentCopyBaseline,
     },
   }),
+
+  computed: {
+    databaseUrl: ({ localItem }) => {
+      if (!localItem.credentials) return { showPassword: '–', hidePassword: '–' };
+
+      const username = encodeURIComponent(localItem.credentials.username);
+      const password = encodeURIComponent(localItem.credentials.password);
+      const host = encodeURIComponent(localItem.credentials.host);
+      const name = localItem.credentials.name && encodeURIComponent(localItem.credentials.name);
+
+      return {
+        showPassword: `postgres://${username}:${password}@${host}/${name || ''}?sslmode=require`,
+        hidePassword: `postgres://${username}:•••••••••••@${host}/${name || ''}?sslmode=require`,
+      };
+    },
+  },
 
   methods: {
     ...mapActions('bus', ['emit']),

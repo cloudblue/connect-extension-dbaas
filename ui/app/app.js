@@ -9,6 +9,10 @@ import createApp, {
   Tabs,
 } from '@cloudblueconnect/connect-ui-toolkit';
 
+import copy from 'vue-clipboard2';
+
+
+Vue.use(copy);
 
 createApp({
   'c-card': Card,

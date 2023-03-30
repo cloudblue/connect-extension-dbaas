@@ -20,6 +20,7 @@ describe('ReconfDialog', () => {
       expect(cmp.data()).toEqual({
         dialogOpened: false,
         acceptTermsAndConds: false,
+        saving: false,
         form: {
           subject: '',
           description: '',
@@ -75,7 +76,7 @@ describe('ReconfDialog', () => {
       it('should call reconfigure api', () => {
         expect(databases.reconfigure).toHaveBeenCalledWith(
           'xxx',
-          { case: { subject: 'Regenerate Access Information for xxx', description: 'bar' } },
+          { details: 'Regenerate access\n\nbar', action: 'update' },
         );
       });
 
@@ -84,7 +85,8 @@ describe('ReconfDialog', () => {
           'saved',
           {
             id: 'xxx',
-            case: { subject: 'Regenerate Access Information for xxx', description: 'bar' },
+            details: 'Regenerate access\n\nbar',
+            action: 'update',
           },
         );
       });
@@ -97,43 +99,15 @@ describe('ReconfDialog', () => {
 
   describe('#watch', () => {
     describe('#value()', () => {
-      let setContext;
-      let call;
-
-      beforeEach(() => {
-        setContext = (mode, item) => {
-          context = {
-            mode,
-            item,
-            dialogOpened: null,
-            form: null,
-          };
+      it('should set dialogOpen value', () => {
+        context = {
+          dialogOpened: false,
         };
 
-        call = (...args) => (cmp.watch.value.handler).call(context, ...args);
+        cmp.watch.value.handler.call(context, true);
+
+        expect(context.dialogOpened).toBe(true);
       });
-
-      it.each([
-        [false, 'create', null, ['form', 'toBe', null]],
-        [true, 'create', null, ['form', 'toBe', null]],
-        [true, 'edit', null, ['form', 'toBe', null]],
-        [true, 'edit', { foo: 'bar' }, ['form', 'toEqual', { foo: 'bar' }]],
-
-        [false, 'create', null, ['dialogOpened', 'toBe', false]],
-        [true, 'create', null, ['dialogOpened', 'toBe', true]],
-        [true, 'edit', null, ['dialogOpened', 'toBe', true]],
-        [true, 'edit', { foo: 'dialogOpened' }, ['dialogOpened', 'toBe', true]],
-      ])(
-        'When mode=%j, item=% should "%j"',
-        (val, mode, item, spec) => {
-          const [property, satisfies, condition] = spec;
-
-          setContext(mode, item);
-          call(val);
-
-          expect(context[property])[satisfies](condition);
-        },
-      );
     });
 
     describe('#dialogOpened()', () => {
