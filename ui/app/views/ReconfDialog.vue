@@ -38,7 +38,7 @@ c-simple-dialog(
 
   c-card(title="Additional Information")
     .detail-item
-      .detail-item-head.item-label._mb_8 Please describe details of your request (optional)
+      .detail-item-head.item-label._mb_8 Please describe details of your request
       .detail-item__text
         textarea(v-model="form.description", materialize)
 
@@ -50,7 +50,8 @@ c-simple-dialog(
     )
 
     c-button(
-      :disabled="!form.subject",
+      :disabled="!isFormValid",
+      :loading="saving",
       mode="solid",
       label="Request Reconfiguration",
       color="accent",
@@ -60,8 +61,8 @@ c-simple-dialog(
 
 <script>
 import {
-  clone,
-} from 'ramda';
+  mapActions,
+} from 'vuex';
 
 import cSimpleDialog from '~components/cSimpleDialog.vue';
 import cButton from '~components/cButton.vue';
@@ -70,10 +71,22 @@ import databases from '~api/databases';
 
 
 const SUBJECTS = {
-  regenerate_access: 'Regenerate Access Information for',
-  change_sizing: 'Change sizing of',
-  drop_db: 'Delete',
-  other: 'Perform some action on',
+  regenerate_access: {
+    action: 'update',
+    details: 'Regenerate access',
+  },
+  change_sizing: {
+    action: 'update',
+    details: 'Change sizing',
+  },
+  other: {
+    action: 'update',
+    details: 'Custom',
+  },
+  drop_db: {
+    action: 'delete',
+    details: '',
+  },
 };
 
 const initialForm = () => ({
@@ -90,19 +103,22 @@ export default {
   props: {
     value: Boolean,
     item: [Object, null],
-    mode: {
-      type: String,
-      default: 'create',
-    },
   },
 
   data: () => ({
     dialogOpened: false,
     acceptTermsAndConds: false,
     form: initialForm(),
+    saving: false,
   }),
 
+  computed: {
+    isFormValid: ({ form }) => form.subject && (form.subject !== 'other' || form.description.length > 1),
+  },
+
   methods: {
+    ...mapActions('bus', ['emit']),
+
     close() {
       this.dialogOpened = false;
       this.form = initialForm();
@@ -110,15 +126,24 @@ export default {
     },
 
     async save() {
-      const item = await databases.reconfigure(this.item.id, {
-        case: {
-          ...this.form,
+      this.saving = true;
+      const { action, details } = SUBJECTS[this.form.subject];
 
-          subject: `${SUBJECTS[this.form.subject]} ${this.item.id}`,
-        },
-      });
-      this.$emit('saved', item);
-      this.close();
+      try {
+        const item = await databases.reconfigure(this.item.id, {
+          action,
+          details: `${details}\n\n${this.form.description}`,
+        });
+
+        this.$emit('saved', item);
+        this.close();
+      } catch (e) {
+        this.emit({ name: 'snackbar:error', value: e });
+        /* eslint-disable no-console */
+        console.error(e);
+      }
+
+      this.saving = false;
     },
   },
 
@@ -126,7 +151,6 @@ export default {
     value: {
       immediate: true,
       handler(v) {
-        if (v && this.mode !== 'create' && this.item) this.form = clone(this.item);
         this.dialogOpened = v;
       },
     },

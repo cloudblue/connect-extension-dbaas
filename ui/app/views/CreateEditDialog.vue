@@ -107,6 +107,10 @@ import {
 } from 'ramda';
 
 import {
+  mapActions,
+} from 'vuex';
+
+import {
   propTo,
   template,
 } from '~utils';
@@ -176,6 +180,8 @@ export default {
   },
 
   methods: {
+    ...mapActions('bus', ['emit']),
+
     close() {
       this.dialogOpened = false;
       this.$emit('closed');
@@ -187,10 +193,16 @@ export default {
     async save() {
       this.saving = true;
 
-      if (this.isEdit) await databases.update(this.item.id, prepareForm(this.isEdit, this.form));
-      else await databases.create(prepareForm(this.isEdit, this.form));
-      this.$emit('saved');
-      this.close();
+      try {
+        if (this.isEdit) await databases.update(this.item.id, prepareForm(this.isEdit, this.form));
+        else await databases.create(prepareForm(this.isEdit, this.form));
+
+        this.$emit('saved');
+        this.close();
+      } catch (e) {
+        this.emit({ name: 'snackbar:error', value: e });
+      }
+
       this.saving = false;
     },
   },
