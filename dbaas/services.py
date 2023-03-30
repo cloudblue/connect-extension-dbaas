@@ -20,7 +20,12 @@ from connect.eaas.core.inject.asynchronous import AsyncConnectClient, get_instal
 from connect.eaas.core.inject.models import Context
 from pymongo.errors import DuplicateKeyError, OperationFailure
 
-from dbaas.constants import DBStatus
+from dbaas.constants import (
+    DB_HELPDESK_CASE_DESCRIPTION_TPL,
+    DB_HELPDESK_CASE_SUBJECT_TPL,
+    DBAction,
+    DBStatus,
+)
 from dbaas.database import Collections, DBEnvVar
 from dbaas.utils import is_admin_context
 
@@ -147,10 +152,11 @@ class DB:
         if not is_admin_context(context):
             installation = await ConnectInstallation.retrieve(context.installation_id, client)
 
+            description = data.get('details') or '-'
             helpdesk_case = await ConnectHelpdeskCase.create_from_db_document(
                 db_document,
-                subject=data['case']['subject'],
-                description=data['case']['description'],
+                action=data['action'],
+                description=description,
                 installation=installation,
                 client=client,
             )
@@ -158,9 +164,6 @@ class DB:
             cases = updated_db_document.get('cases', [])
             cases.append(cls._prepare_helpdesk_case(helpdesk_case))
             updates['cases'] = cases
-
-        else:
-            updates['reconfiguration'] = data['case']
 
         db_coll = db[cls.COLLECTION]
         await db_coll.update_one(
@@ -195,19 +198,25 @@ class DB:
         status = db_document.get('status')
         credentials = data.get('credentials')
 
-        updated_db_document = copy(db_document)
+        workload = data.get('workload')
+        workload_is_updated = workload and workload != db_document.get('workload')
+
         updates = {'status': DBStatus.ACTIVE}
 
         if not credentials:
             if status == DBStatus.REVIEWING:
                 raise ValueError('Credentials are required for DB activation.')
 
-            if status == DBStatus.ACTIVE:
+            if (not workload_is_updated) and status == DBStatus.ACTIVE:
                 return db_document
 
         else:
             updates['credentials'] = cls._encrypt_dict(credentials, config)
 
+        if workload_is_updated:
+            updates['workload'] = workload
+
+        updated_db_document = copy(db_document)
         updated_events = updated_db_document.get('events', {})
         updated_events['activated'] = cls._prepare_event()
         updates['events'] = updated_events
@@ -370,10 +379,9 @@ class DB:
                 if is_admin_ctx:
                     return db_document
 
-                db_document_id = db_document['id']
                 helpdesk_case = await ConnectHelpdeskCase.create_from_db_document(
                     db_document,
-                    subject=f'Request to create {db_document_id}.',
+                    action=DBAction.CREATE,
                     description=db_document['description'],
                     installation=installation,
                     client=client,
@@ -538,23 +546,45 @@ class ConnectInstallation:
 
 
 class ConnectHelpdeskCase:
+    HIGH_PRIORITY = 2
+    TECHNICAL_TYPE = 'technical'
+
     @classmethod
     async def create_from_db_document(
         cls,
         db_document: dict,
-        subject: str,
+        action: str,
         description: str,
-        installation: str,
+        installation: dict,
         client: AsyncConnectClient,
     ) -> dict:
+        db_id = db_document['id']
+        db_name = db_document['name']
+        contact_id = db_document['tech_contact']['id']
+
+        subject = DB_HELPDESK_CASE_SUBJECT_TPL.format(
+            db_id=db_id,
+            db_name=db_name,
+            action=action,
+        )
+        description = DB_HELPDESK_CASE_DESCRIPTION_TPL.format(
+            db_id=db_id,
+            db_name=db_name,
+            db_workload=db_document['workload'],
+            region_id=db_document['region']['id'],
+            contact_id=contact_id,
+            action=action,
+            description=description,
+        )
+
         data = {
             'subject': subject,
             'description': description,
-            'priority': 2,  # high
-            'type': 'business',
+            'priority': cls.HIGH_PRIORITY,
+            'type': cls.TECHNICAL_TYPE,
             'issuer': {
                 'recipients': [
-                    {'id': db_document['tech_contact']['id']},
+                    {'id': contact_id},
                 ],
             },
             'receiver': {

@@ -13,7 +13,7 @@ from connect.client import ClientError
 from connect.eaas.core.inject.models import Context
 from pymongo.errors import WriteError
 
-from dbaas.constants import DBStatus
+from dbaas.constants import DBAction, DBStatus, DBWorkload
 from dbaas.database import Collections
 from dbaas.schemas import DatabaseInUpdate
 from dbaas.services import DB
@@ -453,7 +453,7 @@ async def test__create_db_document_common_document_created(db, config, mocker):
 
     case_p.assert_called_once_with(
         result,
-        subject='Request to create DB1.',
+        action=DBAction.CREATE,
         description='desc',
         installation=installation,
         client=client,
@@ -715,7 +715,7 @@ async def test_reconfigure_wrong_db_status(status, mocker):
 async def test_reconfigure_by_admin(mocker, admin_context, db):
     db_document = DBFactory(status=DBStatus.ACTIVE)
     actor = UserFactory(id='UR-456', name='456')
-    data = {'case': {'subject': 'some'}}
+    data = {'action': DBAction.UPDATE}
     reconfigured_event = {
         'at': 'DT',
         'by': {
@@ -742,12 +742,10 @@ async def test_reconfigure_by_admin(mocker, admin_context, db):
     case_p.assert_not_called()
 
     db_document['status'] = DBStatus.RECONFIGURING
-    db_document['reconfiguration'] = data['case']
     db_document['events'].update(reconfigured_event)
     repr_p.assert_called_once_with(db_document)
     assert db_document_from_db['status'] == DBStatus.RECONFIGURING
     assert db_document_from_db['cases'] == []
-    assert db_document_from_db['reconfiguration'] == data['case']
     assert db_document_from_db['events']['created']
     assert db_document_from_db['events']['reconfigured'] == reconfigured_event
 
@@ -756,7 +754,9 @@ async def test_reconfigure_by_admin(mocker, admin_context, db):
 
 
 @pytest.mark.asyncio
-async def test_reconfigure_by_common_installation(mocker, db):
+@pytest.mark.parametrize('action', (DBAction.DELETE, DBAction.UPDATE))
+@pytest.mark.parametrize('details, case_desc', ((None, '-'), ('des crip', 'des crip')))
+async def test_reconfigure_by_common_installation(mocker, db, action, details, case_desc):
     existing_helpdesk_case = CaseFactory()
     db_document = DBFactory(status=DBStatus.ACTIVE, cases=[existing_helpdesk_case])
 
@@ -764,7 +764,7 @@ async def test_reconfigure_by_common_installation(mocker, db):
     installation = InstallationFactory()
     context = Context(user_id=actor['id'], installation_id=installation['id'])
     helpdesk_case = CaseFactory()
-    data = {'case': {'subject': 'sub', 'description': 'des crip'}}
+    data = {'action': action, 'details': details}
     reconfigured_event = {
         'at': 'DT',
         'by': {
@@ -796,8 +796,8 @@ async def test_reconfigure_by_common_installation(mocker, db):
     installation_p.assert_called_once_with(installation['id'], 'client')
     case_p.assert_called_once_with(
         db_document,
-        subject='sub',
-        description='des crip',
+        action=action,
+        description=case_desc,
         installation=installation,
         client='client',
     )
@@ -807,7 +807,6 @@ async def test_reconfigure_by_common_installation(mocker, db):
     repr_p.assert_called_once_with(db_document)
     assert db_document_from_db['status'] == DBStatus.RECONFIGURING
     assert db_document_from_db['cases'] == [existing_helpdesk_case, {'id': helpdesk_case['id']}]
-    assert 'reconfiguration' not in db_document_from_db
     assert db_document_from_db['events']['created']
     assert db_document_from_db['events']['reconfigured'] == reconfigured_event
 
@@ -893,8 +892,9 @@ async def test_activate_reviewing_without_credentials(config):
 
 @pytest.mark.asyncio
 async def test_activate_reconfiguring_without_credentials(mocker, db, config):
-    db_document = DBFactory(status=DBStatus.RECONFIGURING)
+    db_document = DBFactory(status=DBStatus.RECONFIGURING, workload=DBWorkload.MEDIUM)
     activated_event = {'at': 'DT'}
+    data = {'workload': DBWorkload.LARGE}
 
     await db[Collections.DB].insert_one(db_document)
 
@@ -902,18 +902,20 @@ async def test_activate_reconfiguring_without_credentials(mocker, db, config):
     dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
     dt.now.return_value = 'DT'
 
-    result = await DB.activate(db_document, db=db, data={}, config=config)
+    result = await DB.activate(db_document, db=db, data=data, config=config)
     db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
 
     assert result == 'ra'
 
     db_document['status'] = DBStatus.ACTIVE
+    db_document['workload'] = DBWorkload.LARGE
     db_document['events'].update(activated_event)
     repr_p.assert_called_once_with(db_document, config=config)
     assert db_document_from_db['status'] == DBStatus.ACTIVE
     assert db_document_from_db['events']['created']
     assert db_document_from_db['events']['activated'] == activated_event
     assert db_document_from_db['credentials'] == db_document['credentials']
+    assert db_document_from_db['workload'] == DBWorkload.LARGE
 
     count_docs = await db[Collections.DB].count_documents({})
     assert count_docs == 1
@@ -940,6 +942,7 @@ async def test_activate_with_credentials(mocker, db, status, config):
     assert db_document_from_db['status'] == DBStatus.ACTIVE
     assert db_document_from_db['events']['created']
     assert db_document_from_db['events']['activated'] == activated_event
+    assert db_document_from_db['workload'] == db_document['workload']
     assert DB._decrypt_dict(db_document_from_db['credentials'], config) == credentials
 
     count_docs = await db[Collections.DB].count_documents({})
