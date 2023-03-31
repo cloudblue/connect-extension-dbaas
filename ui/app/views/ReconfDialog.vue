@@ -163,6 +163,10 @@ export default {
 </script>
 
 <style lang="stylus">
+@import '~styles/common';
+</style>
+
+<style lang="stylus" scoped>
 @import "~styles/common"
 
 .choice-card {

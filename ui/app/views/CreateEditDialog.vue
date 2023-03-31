@@ -237,6 +237,10 @@ export default {
 
 <style lang="stylus">
 @import '~styles/common';
+</style>
+
+<style lang="stylus" scoped>
+@import '~styles/common';
 
 .red {
   color: $nice-red;
@@ -251,5 +255,12 @@ export default {
   & > * {
     width: calc(50% - 8px);
   }
+}
+
+.vertical-middle {
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: row;
+  align-items: center;
 }
 </style>

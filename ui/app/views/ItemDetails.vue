@@ -287,11 +287,16 @@ export default {
 
 <style lang="stylus">
 @import '~styles/common';
+</style>
+
+<style lang="stylus" scoped>
+@import '~styles/common';
 
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding-top: 24px;
 
   & > * {
     width: 960px;
@@ -305,7 +310,7 @@ export default {
   flex-wrap: wrap;
 
   & > * {
-    width: calc(50% - 8px);
+    width: calc(50% - 12px);
   }
 }
 

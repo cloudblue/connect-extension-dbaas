@@ -16,19 +16,31 @@
       )
         thead
           tr
-            th(v-for="column in columns", :key="`${column.value}_header`")
+            th(
+              v-for="column in columns",
+              :style="column.style || {}",
+              :key="`${column.value}_header`",
+            )
               slot(:name="`${column.value}-header`", v-bind="column")
                 span {{ column.name || column.value }}
 
         tbody
           template(v-if="loading")
             tr.c-table__loader(v-for="row in 10", :key="row")
-              td(v-for="column in columns", :key="column.value")
+              td(
+                v-for="column in columns",
+                :style="column.style || {}",
+                :key="column.value",
+              )
                 div.c-table__loader_skeleton(:style="`width: ${random(50, 100)}%`")
 
           template(v-else-if="!loading && value.length")
             tr(v-for="(item, index) in value", :key="index")
-              td(v-for="column in columns", :key="`${column.value}_column`")
+              td(
+                v-for="column in columns",
+                :style="column.style || {}",
+                :key="`${column.value}_column`",
+              )
                 slot(
                   :name="column.value",
                   v-bind="{ column, item, value: dpath(column.value, item) }",
