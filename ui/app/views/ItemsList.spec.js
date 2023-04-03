@@ -62,13 +62,40 @@ describe('ItemsList', () => {
 
     describe('#columns', () => {
       it('should return columns list', () => {
-        expect(cmp.computed.columns()).toEqual([
-          { name: 'DB', value: 'name' },
-          { name: 'Region', value: 'region.name' },
-          { name: 'Workload type', value: 'workload' },
-          { name: 'Description', value: 'description' },
-          { name: 'Status', value: 'status' },
-        ]);
+        expect(cmp.computed.columns()).toEqual([{
+          name: 'DB',
+          value: 'name',
+
+          style: {
+            width: '300px',
+            paddingLeft: '24px',
+          },
+        }, {
+          name: 'Region',
+          value: 'region.name',
+
+          style: {
+            width: '100px',
+          },
+        }, {
+          name: 'Workload',
+          value: 'workload',
+
+          style: {
+            width: '100px',
+          },
+        }, {
+          name: 'Description',
+          value: 'description',
+        }, {
+          name: 'Status',
+          value: 'status',
+
+          style: {
+            width: '120px',
+            paddingLeft: '24px',
+          },
+        }]);
       });
     });
   });

@@ -59,20 +59,20 @@
         :label="buttonText",
       )
         template(#icon="")
-          c-simple-svg(path="add", color="accent")
+          ez-svg(path="add", color="accent")
 </template>
 
 <script>
 import cAlert from '~components/cAlert.vue';
 import cButton from '~components/cButton.vue';
 import cFancyIcon from '~components/cFancyIcon.vue';
-import cSimpleSvg from '~components/cSimpleSvg.vue';
+import ezSvg from '~components/ezSvg.vue';
 
 
 export default {
   components: {
     cFancyIcon,
-    cSimpleSvg,
+    ezSvg,
     cAlert,
     cButton,
   },

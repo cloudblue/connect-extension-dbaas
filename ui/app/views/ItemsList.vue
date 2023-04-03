@@ -1,6 +1,6 @@
 <template lang="pug">
 div
-  c-simple-toolbar._mb_16
+  ez-toolbar._mb_24
     template(#actions="")
       c-button(
         mode="solid",
@@ -9,7 +9,7 @@ div
         @click="openCreationDialog",
       )
         template(#icon="")
-          c-simple-svg(
+          ez-svg(
             path="add",
             color="white",
             size="18",
@@ -28,11 +28,12 @@ div
     br
     | For more information, please refer to our documentation.
 
-  c-simple-table(
+  ez-table(
     v-else,
     v-model="list",
     :loading="loading",
     :columns="columns",
+    fix-layout,
   )
     template(#workload="{ value }")
       span.capitalize {{ value }}
@@ -43,7 +44,7 @@ div
         .detail-item__assistive-text {{ item.id }}
 
     template(#description="{ value }")
-      span.assistive-text {{ value }}
+      .assistive-text {{ value }}
 
     template(#status="{ value }")
       c-status(:status="value")
@@ -66,11 +67,11 @@ import {
 import databases from '~api/databases';
 
 import cScreenPlaceholder from '~components/cScreenPlaceholder.vue';
-import cSimpleTable from '~components/cSimpleTable.vue';
+import ezTable from '~components/ezTable.vue';
 import cStatus from '~components/cStatus.vue';
 import cButton from '~components/cButton.vue';
-import cSimpleToolbar from '~components/cSimpleToolbar.vue';
-import cSimpleSvg from '~components/cSimpleSvg.vue';
+import ezToolbar from '~components/ezToolbar.vue';
+import ezSvg from '~components/ezSvg.vue';
 
 import DatabaseDialog from '~views/CreateEditDialog.vue';
 
@@ -79,11 +80,11 @@ export default {
   components: {
     DatabaseDialog,
     cScreenPlaceholder,
-    cSimpleTable,
-    cSimpleToolbar,
+    ezTable,
+    ezToolbar,
     cStatus,
     cButton,
-    cSimpleSvg,
+    ezSvg,
   },
 
   data: () => ({
@@ -97,13 +98,40 @@ export default {
 
     showPlaceholder: ({ list, loading }) => !loading && isNilOrEmpty(list),
 
-    columns: () => [
-      { name: 'DB', value: 'name' },
-      { name: 'Region', value: 'region.name' },
-      { name: 'Workload type', value: 'workload' },
-      { name: 'Description', value: 'description' },
-      { name: 'Status', value: 'status' },
-    ],
+    columns: () => [{
+      name: 'DB',
+      value: 'name',
+
+      style: {
+        width: '300px',
+        paddingLeft: '24px',
+      },
+    }, {
+      name: 'Region',
+      value: 'region.name',
+
+      style: {
+        width: '100px',
+      },
+    }, {
+      name: 'Workload',
+      value: 'workload',
+
+      style: {
+        width: '100px',
+      },
+    }, {
+      name: 'Description',
+      value: 'description',
+    }, {
+      name: 'Status',
+      value: 'status',
+
+      style: {
+        width: '120px',
+        paddingLeft: '24px',
+      },
+    }],
   },
 
   methods: {
@@ -125,6 +153,12 @@ export default {
 </script>
 
 <style lang="stylus">
+@import '~styles/common';
+</style>
+
+<style lang="stylus" scoped>
+@import '~styles/common';
+
 .two-columns {
   display: flex;
   flex-direction: row;
@@ -132,7 +166,7 @@ export default {
   flex-wrap: wrap;
 
   & > * {
-    width: calc(50% - 8px);
+    width: calc(50% - 12px);
   }
 }
 

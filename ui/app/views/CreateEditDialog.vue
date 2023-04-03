@@ -1,10 +1,10 @@
 <template lang="pug">
-c-simple-dialog(
+ez-dialog(
   v-model="dialogOpened",
   width="800",
   title="Request database",
 )
-  c-card(title="General")
+  ui-card(title="General")
     // CREATE MODE
     div(v-if="!isEdit")
       .two-columns
@@ -47,7 +47,7 @@ c-simple-dialog(
 
   ._mt_24
 
-  c-card(title="Technical contact")
+  ui-card(title="Technical contact")
     .detail-item
       .detail-item-head.item-label._mb_8 User
         sup._ml_4.red *
@@ -115,7 +115,7 @@ import {
   template,
 } from '~utils';
 
-import cSimpleDialog from '~components/cSimpleDialog.vue';
+import ezDialog from '~components/ezDialog.vue';
 import cButton from '~components/cButton.vue';
 
 import databases from '~api/databases';
@@ -144,7 +144,7 @@ const prepareForm = (isEdit, v) => template({
 
 export default {
   components: {
-    cSimpleDialog,
+    ezDialog,
     cButton,
   },
 
@@ -237,6 +237,10 @@ export default {
 
 <style lang="stylus">
 @import '~styles/common';
+</style>
+
+<style lang="stylus" scoped>
+@import '~styles/common';
 
 .red {
   color: $nice-red;
@@ -251,5 +255,12 @@ export default {
   & > * {
     width: calc(50% - 8px);
   }
+}
+
+.vertical-middle {
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: row;
+  align-items: center;
 }
 </style>

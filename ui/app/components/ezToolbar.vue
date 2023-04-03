@@ -1,7 +1,7 @@
 <template lang="pug">
-.c-simple-toolbar__placeholder
-  .c-simple-toolbar._display_flex-center
-    c-simple-svg._ml_24._mr_24(
+.ez-toolbar__placeholder
+  .ez-toolbar._display_flex-center
+    ez-svg._ml_24._mr_24(
       v-if="onBack",
       path="arrow_back",
       @click="onBack",
@@ -9,19 +9,19 @@
 
     ._display_flex-column
       .assistive-text(v-if="subtitle") {{ subtitle }}
-      h3._mb_0  {{ title }}
+      h3.ez-toolbar__title._mb_0  {{ title }}
 
-    .c-simple-toolbar__actions._mr_24
+    .ez-toolbar__actions._mr_24
       slot(name="actions")
 </template>
 
 <script>
-import cSimpleSvg from '~components/cSimpleSvg.vue';
+import ezSvg from '~components/ezSvg.vue';
 
 
 export default {
   components: {
-    cSimpleSvg,
+    ezSvg,
   },
 
   props: {
@@ -45,13 +45,17 @@ export default {
   flex-direction: column;
 }
 
-.c-simple-toolbar {
+.ez-toolbar {
   position: fixed;
   height: 64px;
   left: 0px;
   right: 0px;
   background: $theme-controls-background;
   border-bottom: 1px solid $theme-border-color;
+
+  &__title {
+    font-weight: 500;
+  }
 
   &__placeholder {
     height: 64px;
