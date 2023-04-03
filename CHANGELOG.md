@@ -7,3 +7,4 @@
   * DB Reconfigure API is reworked
   * DB Activate API is enhanced: credentials validation, support for workload update
 * 0.2.1: Backend dependencies are bumped
+* 0.2.2: Frontend changes, Runner update
