@@ -7,4 +7,10 @@
   * DB Reconfigure API is reworked
   * DB Activate API is enhanced: credentials validation, support for workload update
 * 0.2.1: Backend dependencies are bumped
-* 0.2.2: Frontend changes, Runner update
+* 0.2.2: Frontend changes
+  * Cosmetic changes of layout
+  * Component's prefixes now match a scope. 
+    * `c-` for Connect SPA directly borrowed ones
+    * `ez-` for Connect SPA components replicas
+    * `ui-` for ones imported from Connect UI Toolkit
+  * Table columns now may be styled directly with a column descriptor `style` property
