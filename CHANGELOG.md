@@ -14,3 +14,4 @@
     * `ez-` for Connect SPA components replicas
     * `ui-` for ones imported from Connect UI Toolkit
   * Table columns now may be styled directly with a column descriptor `style` property
+* 0.2.3: Better handling of DB and Client Server errors

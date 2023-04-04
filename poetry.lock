@@ -302,14 +302,14 @@ test = ["flake8 (==3.7.8)", "hypothesis (==3.55.3)"]
 
 [[package]]
 name = "connect-eaas-core"
-version = "27.11"
+version = "27.13"
 description = "Connect Eaas Core"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4"
 files = [
-    {file = "connect_eaas_core-27.11-py3-none-any.whl", hash = "sha256:27863e5631ac776d6aac301cdc8c1c48299b6aee3f78a81995ee9572dd1de6a2"},
-    {file = "connect_eaas_core-27.11.tar.gz", hash = "sha256:4d5006fb87f2160a7a478f41162b6614c9fcbd1aa17c55549d71c7f5e656bf37"},
+    {file = "connect_eaas_core-27.13-py3-none-any.whl", hash = "sha256:c41368e01bb32415c716b0b5977280292fc50ebac4c425264a22360d6dc6ef2d"},
+    {file = "connect_eaas_core-27.13.tar.gz", hash = "sha256:7cfe1553fc99718998652b41af34d6c000c4fda89d5f2bf86bf1c280f0ce14da"},
 ]
 
 [package.dependencies]
@@ -541,14 +541,14 @@ doc = ["Sphinx", "sphinx-rtd-theme", "sphinxcontrib-spelling"]
 
 [[package]]
 name = "faker"
-version = "18.3.1"
+version = "18.3.2"
 description = "Faker is a Python package that generates fake data for you."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "Faker-18.3.1-py3-none-any.whl", hash = "sha256:4c98c42984db54be2246d40e6407cd983db7b1511a70eaff64c3f383a51bace6"},
-    {file = "Faker-18.3.1.tar.gz", hash = "sha256:9bd71833146b844d848791b79720c7806108130c9603c7074123b3f77b4e97a1"},
+    {file = "Faker-18.3.2-py3-none-any.whl", hash = "sha256:f3299679a6b23409cfe69774bbd1148324a05bd38bda041da6c302e618d7d4a0"},
+    {file = "Faker-18.3.2.tar.gz", hash = "sha256:a000bba893ea502cea66d06acf14e01655a2289e4904de80faf9dbe880fa1a39"},
 ]
 
 [package.dependencies]
@@ -1032,14 +1032,14 @@ files = [
 
 [[package]]
 name = "motor"
-version = "3.1.1"
+version = "3.1.2"
 description = "Non-blocking MongoDB driver for Tornado or asyncio"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "motor-3.1.1-py3-none-any.whl", hash = "sha256:01d93d7c512810dcd85f4d634a7244ba42ff6be7340c869791fe793561e734da"},
-    {file = "motor-3.1.1.tar.gz", hash = "sha256:a4bdadf8a08ebb186ba16e557ba432aa867f689a42b80f2e9f8b24bbb1604742"},
+    {file = "motor-3.1.2-py3-none-any.whl", hash = "sha256:4bfc65230853ad61af447088527c1197f91c20ee957cfaea3144226907335716"},
+    {file = "motor-3.1.2.tar.gz", hash = "sha256:80c08477c09e70db4f85c99d484f2bafa095772f1d29b3ccb253270f9041da9a"},
 ]
 
 [package.dependencies]
@@ -1757,4 +1757,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<4"
-content-hash = "bc74578fcd1f109ce80b982f74e47a2a1f6010c2c15395a847005c7b6a661f45"
+content-hash = "b8fb4e8b000d2fe390c29a1be34100b21342c7177d56050b91b4779b349ebd28"
