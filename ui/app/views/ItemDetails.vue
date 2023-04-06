@@ -15,6 +15,23 @@ div
   )
     template(#actions="")
       c-button._mr_16(
+        v-if="installationContext.isAdmin",
+        mode="solid",
+        label="Activate",
+        color="accent",
+        @click="openActivateDialog",
+      )
+
+      c-button._mr_16(
+        v-if="installationContext.isAdmin",
+        mode="solid",
+        label="Delete",
+        color="accent",
+        @click="openDeleteDialog",
+      )
+
+      c-button._mr_16(
+        v-if="!installationContext.isAdmin",
         :disabled="localItem.status !== 'active'",
         mode="solid",
         label="Request Reconfiguration",
@@ -80,7 +97,7 @@ div
           .detail-item-head.item-label._mb_8 Planned database workload
           .detail-item__text {{ localItem.description }}
 
-    ui-card._mt_24(title="Access information", v-if="localItem.credentials")
+    ui-card._mt_24(title="Access information", v-if="localItem && localItem.credentials")
       .item-row
         .item-label URL
         .item-value {{ hidePassword ? databaseUrl.hidePassword : databaseUrl.showPassword }}
@@ -134,6 +151,18 @@ div
     @saved="load",
   )
 
+  activate-dialog(
+    v-model="isActivateDialogOpened",
+    :item="localItem",
+    @saved="load",
+  )
+
+  delete-dialog(
+    v-model="isDeleteDialogOpened",
+    :item="localItem",
+    @saved="onBack",
+  )
+
   reconf-dialog(
     v-model="isReconfDialogOpened",
     :item="localItem",
@@ -144,6 +173,7 @@ div
 <script>
 import {
   mapActions,
+  mapState,
 } from 'vuex';
 
 import {
@@ -167,7 +197,9 @@ import ezToolbar from '~components/ezToolbar.vue';
 import cButton from '~components/cButton.vue';
 import ezSvg from '~components/ezSvg.vue';
 
+import ActivateDialog from '~views/ActivateDialog.vue';
 import DatabaseDialog from '~views/CreateEditDialog.vue';
+import DeleteDialog from '~views/DeleteDialog.vue';
 import ReconfDialog from '~views/ReconfDialog.vue';
 
 import databases from '~api/databases';
@@ -193,7 +225,9 @@ export default {
     ezToolbar,
     cButton,
     ezSvg,
+    ActivateDialog,
     DatabaseDialog,
+    DeleteDialog,
     ReconfDialog,
   },
 
@@ -206,6 +240,8 @@ export default {
 
   data: () => ({
     isDialogOpened: false,
+    isActivateDialogOpened: false,
+    isDeleteDialogOpened: false,
     isReconfDialogOpened: false,
     loading: false,
     hidePassword: true,
@@ -220,8 +256,10 @@ export default {
   }),
 
   computed: {
+    ...mapState(['installationContext']),
+
     databaseUrl: ({ localItem }) => {
-      if (!localItem.credentials) return { showPassword: '–', hidePassword: '–' };
+      if (!localItem?.credentials) return { showPassword: '–', hidePassword: '–' };
 
       const username = encodeURIComponent(localItem.credentials.username);
       const password = encodeURIComponent(localItem.credentials.password);
@@ -237,6 +275,14 @@ export default {
 
   methods: {
     ...mapActions('bus', ['emit']),
+
+    openActivateDialog() {
+      this.isActivateDialogOpened = true;
+    },
+
+    openDeleteDialog() {
+      this.isDeleteDialogOpened = true;
+    },
 
     openReconfigureDialog() {
       this.isReconfDialogOpened = true;

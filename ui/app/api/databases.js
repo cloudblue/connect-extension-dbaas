@@ -11,8 +11,13 @@ export default rest(URL, {
     { body: data, ...opts },
   ),
 
-  activate: (id, opts = {}) => http.post(
-    `${URL}/${id}/activate`,
+  delete: (id, opts = {}) => http.delete(
+    `${URL}/${id}`,
     opts,
+  ),
+
+  activate: (id, data, opts = {}) => http.post(
+    `${URL}/${id}/activate`,
+    { body: data, ...opts },
   ),
 });

@@ -29,6 +29,30 @@ input[type=text][materialize] {
   }
 }
 
+input[type=password][materialize] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  width: 100%
+  padding: 12px;
+  background: $theme-controls-background;
+  border: 1px solid $theme-border-color;
+  border-radius: 2px;
+
+  color: $base-text-color;
+  font-family: $theme-font-family;
+  font-size: $theme-font-size-smaller;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.2em;
+
+  &:focus-visible {
+    outline-width: 0;
+    border-color: $accent;
+  }
+}
+
 textarea[materialize] {
   appearance: none;
   -webkit-appearance: none;
