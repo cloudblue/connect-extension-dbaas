@@ -7,6 +7,7 @@
 from logging import LoggerAdapter
 from typing import Optional
 
+from connect.client import ClientError
 from connect.eaas.core.decorators import (
     devops_pages,
     proxied_connect_api,
@@ -39,14 +40,16 @@ from dbaas.utils import get_installation_client, is_admin_context
 _db_id_type = constr(strict=True, max_length=16)
 
 
-async def handle_db_exceptions_mw(request: Request, call_next) -> responses.Response:
-    try:
-        response = await call_next(request)
+async def na_exception_handler(request: Request, exc: Exception) -> responses.JSONResponse:
+    return responses.JSONResponse({'message': 'Service Unavailable.'}, status_code=503)
 
-    except DBException:
-        response = responses.JSONResponse({'message': 'Service Unavailable.'}, status_code=503)
 
-    return response
+async def client_error_handler(request: Request, exc: ClientError) -> responses.JSONResponse:
+    if (not exc.status_code) or exc.status_code >= 500:
+        return await na_exception_handler(request, exc)
+
+    message = exc.errors[0] if exc.errors else exc.message
+    return responses.JSONResponse({'message': message}, status_code=400)
 
 
 @web_app(router)
@@ -60,8 +63,11 @@ async def handle_db_exceptions_mw(request: Request, call_next) -> responses.Resp
 ])
 class DBaaSWebApplication(WebApplicationBase):
     @classmethod
-    def get_middlewares(cls):
-        return [handle_db_exceptions_mw]
+    def get_exception_handlers(cls, _):
+        return {
+            ClientError: client_error_handler,
+            DBException: na_exception_handler,
+        }
 
     @router.get(
         '/v1/databases',
