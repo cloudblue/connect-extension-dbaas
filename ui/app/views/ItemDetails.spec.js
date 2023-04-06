@@ -20,6 +20,8 @@ describe('ItemDetails', () => {
       expect(cmp.data()).toEqual({
         isDialogOpened: false,
         isReconfDialogOpened: false,
+        isActivateDialogOpened: false,
+        isDeleteDialogOpened: false,
         loading: false,
         hidePassword: true,
         editingItem: null,
@@ -59,7 +61,7 @@ describe('ItemDetails', () => {
         await cmp.methods.load.call(context);
       });
 
-      it('should call datanbases.get with proper id', () => {
+      it('should call databases.get with proper id', () => {
         expect(databases.get).toHaveBeenCalledWith('xxx');
       });
 

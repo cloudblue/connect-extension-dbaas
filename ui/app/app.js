@@ -24,6 +24,10 @@ createApp({
     },
   });
 
+  connectBus.watch('*', (ctx) => {
+    store.commit('setInstallationContext', ctx);
+  }, { immediate: true });
+
   const app = new Vue({
     store,
 
