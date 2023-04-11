@@ -113,7 +113,6 @@ export default {
   }),
 
   computed: {
-    isEdit: ({ item }) => Boolean(item),
     allowSaving: ({ form }) => Boolean((
       form.credentials.username
       && form.credentials.password
@@ -128,8 +127,6 @@ export default {
       this.dialogOpened = false;
       this.$emit('closed');
       this.form = initialForm();
-      this.users = [];
-      this.regions = [];
     },
 
     async save() {
