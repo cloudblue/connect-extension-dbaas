@@ -46,6 +46,24 @@ describe('ItemDetails', () => {
       });
     });
 
+    describe('openActivateDialog', () => {
+      it('should set isActivateDialogOpened to true', () => {
+        context = { isActivateDialogOpened: false };
+        cmp.methods.openActivateDialog.call(context);
+
+        expect(context.isActivateDialogOpened).toBe(true);
+      });
+    });
+
+    describe('openDeleteDialog', () => {
+      it('should set isDeleteDialogOpened to true', () => {
+        context = { isDeleteDialogOpened: false };
+        cmp.methods.openDeleteDialog.call(context);
+
+        expect(context.isDeleteDialogOpened).toBe(true);
+      });
+    });
+
     describe('#openEditDialog()', () => {
       it('should set isDialogOpened to true', () => {
         context = { isDialogOpened: false };
