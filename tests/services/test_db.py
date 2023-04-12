@@ -836,10 +836,11 @@ async def test_delete(mocker, db, status):
     await db[Collections.DB].insert_one(db_document)
 
     repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='delete')
+    case_res_p = mocker.patch('dbaas.services.DB._resolve_last_db_document_case')
     dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
     dt.now.return_value = 'DT'
 
-    result = await DB.delete(db_document, db, config='config')
+    result = await DB.delete(db_document, db, config='config', client='client')
     db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
 
     assert result == 'delete'
@@ -847,6 +848,7 @@ async def test_delete(mocker, db, status):
     db_document['status'] = DBStatus.DELETED
     db_document['events'].update(deleted_event)
     repr_p.assert_called_once_with(db_document)
+    case_res_p.assert_called_once_with(db_document, 'client')
     assert db_document_from_db['status'] == DBStatus.DELETED
     assert db_document_from_db['events']['created']
     assert db_document_from_db['events']['deleted'] == deleted_event
@@ -863,6 +865,7 @@ async def test_activate_active_without_credentials(mocker, db, config):
     await db[Collections.DB].insert_one(db_document)
 
     repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='aa')
+    case_res_p = mocker.patch('dbaas.services.DB._resolve_last_db_document_case')
 
     result = await DB.activate(db_document, db=db, data={}, config=config, client='client')
     db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
@@ -871,6 +874,7 @@ async def test_activate_active_without_credentials(mocker, db, config):
 
     db_document['status'] = DBStatus.ACTIVE
     repr_p.assert_called_once_with(db_document, config=config)
+    case_res_p.assert_not_called()
     assert db_document_from_db['status'] == DBStatus.ACTIVE
     assert db_document_from_db['events']['created']
     assert 'activated' not in db_document_from_db['events']
@@ -885,7 +889,7 @@ async def test_activate_reviewing_without_credentials(config):
     db_document = DBFactory(status=DBStatus.REVIEWING)
 
     with pytest.raises(ValueError) as e:
-        await DB.activate(db_document, db='db', data={}, config=config)
+        await DB.activate(db_document, db='db', data={}, config=config, client='client')
 
     assert str(e.value) == 'Credentials are required for DB activation.'
 
@@ -899,10 +903,11 @@ async def test_activate_reconfiguring_without_credentials(mocker, db, config):
     await db[Collections.DB].insert_one(db_document)
 
     repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='ra')
+    case_res_p = mocker.patch('dbaas.services.DB._resolve_last_db_document_case')
     dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
     dt.now.return_value = 'DT'
 
-    result = await DB.activate(db_document, db=db, data=data, config=config)
+    result = await DB.activate(db_document, db=db, data=data, config=config, client='client')
     db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
 
     assert result == 'ra'
@@ -911,6 +916,7 @@ async def test_activate_reconfiguring_without_credentials(mocker, db, config):
     db_document['workload'] = DBWorkload.LARGE
     db_document['events'].update(activated_event)
     repr_p.assert_called_once_with(db_document, config=config)
+    case_res_p.assert_called_once_with(db_document, 'client')
     assert db_document_from_db['status'] == DBStatus.ACTIVE
     assert db_document_from_db['events']['created']
     assert db_document_from_db['events']['activated'] == activated_event
@@ -931,10 +937,13 @@ async def test_activate_with_credentials(mocker, db, status, config):
     await db[Collections.DB].insert_one(db_document)
 
     mocker.patch('dbaas.services.DB._db_document_repr', return_value='rc')
+    mocker.patch('dbaas.services.DB._resolve_last_db_document_case')
     dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
     dt.now.return_value = 'DT'
 
-    result = await DB.activate(db_document, db=db, data={'credentials': credentials}, config=config)
+    result = await DB.activate(
+        db_document, db=db, data={'credentials': credentials}, config=config, client='client',
+    )
     db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
 
     assert result == 'rc'
@@ -947,3 +956,23 @@ async def test_activate_with_credentials(mocker, db, status, config):
 
     count_docs = await db[Collections.DB].count_documents({})
     assert count_docs == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('document', ({}, {'cases': []}))
+async def test__resolve_last_db_document_case_no_case(mocker, document):
+    case_p = mocker.patch('dbaas.services.ConnectHelpdeskCase.resolve')
+
+    DB._resolve_last_db_document_case(document, 'client')
+
+    case_p.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('cases', ([{'id': 'CS-123'}], [{'id': 'CS-456'}, {'id': 'CS-123'}]))
+async def test__resolve_last_db_document_case_with_case(mocker, cases):
+    case_p = mocker.patch('dbaas.services.ConnectHelpdeskCase.resolve')
+
+    DB._resolve_last_db_document_case({'cases': cases}, 'client')
+
+    case_p.assert_called_once_with('CS-123', 'client')

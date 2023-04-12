@@ -162,10 +162,11 @@ class DBaaSWebApplication(WebApplicationBase):
         self,
         db_id: _db_id_type,
         context: Context = Depends(get_call_context),
+        client: AsyncConnectClient = Depends(get_installation_client),
         db=Depends(get_db),
     ):
         result = await self._action(
-            db_id, action=DB.delete, is_admin_action=True, context=context, db=db,
+            db_id, action=DB.delete, is_admin_action=True, context=context, db=db, client=client,
         )
 
         return responses.Response(status_code=204) if isinstance(result, BaseModel) else result
@@ -209,6 +210,7 @@ class DBaaSWebApplication(WebApplicationBase):
         data: DatabaseActivate,
         context: Context = Depends(get_call_context),
         config: dict = Depends(get_config),
+        client: AsyncConnectClient = Depends(get_installation_client),
         db=Depends(get_db),
     ):
         result = await self._action(
@@ -219,6 +221,7 @@ class DBaaSWebApplication(WebApplicationBase):
             context=context,
             db=db,
             config=config,
+            client=client,
         )
 
         return result

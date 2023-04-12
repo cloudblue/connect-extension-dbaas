@@ -16,3 +16,4 @@
   * Table columns now may be styled directly with a column descriptor `style` property
 * 0.2.3: Better handling of DB and Client Server errors
 * 0.3.0: Administrative UI
+* 0.3.1: Helpdesk Cases are automatically resolved in administrative actions

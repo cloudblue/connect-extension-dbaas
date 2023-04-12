@@ -325,7 +325,7 @@ def test_activate_database_200(admin_api_client, mocker, config, admin_context):
         data={'credentials': None, 'workload': None},
         db=DB_DEP_MOCK,
         context=admin_context,
-        client=None,
+        client=INSTALLATION_CLIENT_DEP_MOCK,
         config=config,
     )
 
@@ -358,7 +358,7 @@ def test_activate_database_400(admin_api_client, mocker, config, admin_context):
         data=data,
         db=DB_DEP_MOCK,
         context=admin_context,
-        client=None,
+        client=INSTALLATION_CLIENT_DEP_MOCK,
         config=config,
     )
 
@@ -416,7 +416,7 @@ def test_delete_database_204(admin_api_client, mocker, config, admin_context):
         data=None,
         db=DB_DEP_MOCK,
         context=admin_context,
-        client=None,
+        client=INSTALLATION_CLIENT_DEP_MOCK,
         config=None,
     )
 

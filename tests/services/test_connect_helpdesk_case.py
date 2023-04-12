@@ -137,3 +137,26 @@ async def test_create_ok(async_client_mocker, async_connect_client):
     result = await ConnectHelpdeskCase.create(data, async_connect_client)
 
     assert result == helpdesk_case
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('status_code', (400, 404, 503))
+async def test_resolve_bad_response_from_connect_api(
+    async_client_mocker, status_code, async_connect_client,
+):
+    async_client_mocker('helpdesk').cases['CS-123']('resolve').post(status_code=status_code)
+
+    await ConnectHelpdeskCase.resolve('CS-123', async_connect_client)
+
+    async_connect_client.logger.logger.warning.assert_called_once_with(
+        'Could not resolve case %s.', 'CS-123',
+    )
+
+
+@pytest.mark.asyncio
+async def test_resolve_ok(async_client_mocker, async_connect_client):
+    async_client_mocker('helpdesk').cases['CS-456']('resolve').post(return_value={'x': True})
+
+    assert await ConnectHelpdeskCase.resolve('CS-456', async_connect_client) is None
+
+    async_connect_client.logger.logger.warning.assert_not_called()
