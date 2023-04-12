@@ -24,21 +24,22 @@ def default_endpoint():
 
 
 @pytest.fixture
-def async_connect_client(default_endpoint):
+def logger(mocker):
+    return mocker.MagicMock()
+
+
+@pytest.fixture
+def async_connect_client(default_endpoint, logger):
     return AsyncConnectClient(
         'ApiKey fake_api_key',
         endpoint=default_endpoint,
+        logger=logger,
     )
 
 
 @pytest.fixture
 def async_client_mocker(async_client_mocker_factory, default_endpoint):
     return async_client_mocker_factory(base_url=default_endpoint)
-
-
-@pytest.fixture
-def logger(mocker):
-    return mocker.MagicMock()
 
 
 @pytest.fixture

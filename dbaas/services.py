@@ -4,6 +4,7 @@
 # All rights reserved.
 #
 
+import asyncio
 import random
 import string
 from copy import copy
@@ -107,6 +108,7 @@ class DB:
         cls,
         db_document: dict,
         db: AsyncIOMotorDatabase,
+        client: AsyncConnectClient,
         **kwargs,
     ) -> dict:
         updated_db_document = copy(db_document)
@@ -121,8 +123,10 @@ class DB:
             {'id': db_document['id']},
             {'$set': updates},
         )
-
         updated_db_document.update(updates)
+
+        cls._resolve_last_db_document_case(db_document, client)
+
         return cls._db_document_repr(updated_db_document)
 
     @classmethod
@@ -181,9 +185,10 @@ class DB:
         data: dict,
         db: AsyncIOMotorDatabase,
         config: dict,
+        client: AsyncConnectClient,
         **kwargs,
     ) -> dict:
-        updated_db_document = await cls._activate(db_document, data, db, config)
+        updated_db_document = await cls._activate(db_document, data, db, config, client)
 
         return cls._db_document_repr(updated_db_document, config=config)
 
@@ -194,6 +199,7 @@ class DB:
         data: dict,
         db: AsyncIOMotorDatabase,
         config: dict,
+        client: AsyncConnectClient,
     ):
         status = db_document.get('status')
         credentials = data.get('credentials')
@@ -226,8 +232,10 @@ class DB:
             {'id': db_document['id']},
             {'$set': updates},
         )
-
         updated_db_document.update(updates)
+
+        cls._resolve_last_db_document_case(db_document, client)
+
         return updated_db_document
 
     @classmethod
@@ -273,6 +281,12 @@ class DB:
         return updated_db_document
 
     @classmethod
+    def _resolve_last_db_document_case(cls, db_document: dict, client: AsyncConnectClient):
+        case = cls._get_last_db_document_case(db_document)
+        if case:
+            asyncio.create_task(ConnectHelpdeskCase.resolve(case['id'], client))
+
+    @classmethod
     def _default_query(cls, context: Context) -> dict:
         q = {'status': {'$ne': DBStatus.DELETED}}
 
@@ -285,9 +299,9 @@ class DB:
     def _db_document_repr(cls, db_document: dict, config: dict = None) -> dict:
         document = copy(db_document)
 
-        cases = document.get('cases')
-        if cases:
-            document['case'] = cases[-1]
+        case = cls._get_last_db_document_case(document)
+        if case:
+            document['case'] = case
 
         status = document.get('status')
         credentials = db_document.get('credentials')
@@ -299,6 +313,11 @@ class DB:
                 document['credentials'] = cls._decrypt_dict(document['credentials'], config)
 
         return document
+
+    @classmethod
+    def _get_last_db_document_case(cls, db_document: dict) -> Optional[dict]:
+        cases = db_document.get('cases')
+        return cases[-1] if cases else None
 
     @classmethod
     async def _get_validated_region_document(
@@ -605,3 +624,10 @@ class ConnectHelpdeskCase:
         helpdesk_case = await client('helpdesk').cases.create(payload=data)
 
         return helpdesk_case
+
+    @classmethod
+    async def resolve(cls, case_id: str, client: AsyncConnectClient):
+        try:
+            await client('helpdesk').cases[case_id]('resolve').post()
+        except ClientError:
+            client.logger.logger.warning('Could not resolve case %s.', case_id)
