@@ -3,6 +3,7 @@ ez-dialog(
   v-model="dialogOpened",
   width="800",
   title="Activate database",
+  :error-text="errorText",
 )
   ui-card(title="Access")
     .detail-item._mt_0
@@ -107,6 +108,7 @@ export default {
   },
 
   data: () => ({
+    errorText: null,
     dialogOpened: false,
     saving: false,
     form: initialForm(),
@@ -130,6 +132,7 @@ export default {
     },
 
     async save() {
+      this.errorText = null;
       this.saving = true;
 
       try {
@@ -138,6 +141,12 @@ export default {
         this.$emit('saved');
         this.close();
       } catch (e) {
+        if (e.status === 422) {
+          this.errorText = 'An input error occurred. Please fill all required fields';
+        } else {
+          this.errorText = `#${e.status} ${e.message}`;
+        }
+
         this.emit({ name: 'snackbar:error', value: e });
       }
 
@@ -158,6 +167,11 @@ export default {
     },
 
     dialogOpened(v) {
+      if (!v) {
+        this.errorText = null;
+        this.form = initialForm();
+      }
+
       if (this.value !== v) this.$emit('input', v);
     },
   },

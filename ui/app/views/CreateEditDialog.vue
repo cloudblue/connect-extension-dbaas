@@ -3,6 +3,7 @@ ez-dialog(
   v-model="dialogOpened",
   width="800",
   title="Request database",
+  :error-text="errorText",
 )
   ui-card(title="General")
     // CREATE MODE
@@ -37,6 +38,12 @@ ez-dialog(
           ._ml_24
           input#large._ml_24(type="radio" v-model="form.workload" value="large", materialize)
           label._ml_8(for="large", materialize) Large
+
+      p._mt_16._mb_0.assistive-text {{ workloadDescriptions[form.workload] }}
+        a._ml_4(
+          href="https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/concepts-limits#maximum-connections",
+          target="_blank",
+        ) Read more
 
     // EDIT MODE
     .detail-item._mt_0(v-if="isEdit")
@@ -154,6 +161,7 @@ export default {
   },
 
   data: () => ({
+    errorText: null,
     dialogOpened: false,
     acceptTermsAndConds: false,
     saving: false,
@@ -168,6 +176,7 @@ export default {
       isEdit
       && form.name
       && form.description
+      && form.workload
       && form.tech_contact.id
     ) || (
       !isEdit
@@ -175,8 +184,15 @@ export default {
       && form.name
       && form.description
       && form.region.id
+      && form.workload
       && form.tech_contact.id
     )),
+
+    workloadDescriptions: () => ({
+      small: 'Plan "B2s". vCores: 2; Memory Size: 4Gb; Max Connections: 100; Max User Connections: 97',
+      medium: 'Plan "D2s_v3". vCores: 2; Memory Size: 8Gb; Max Connections: 859; Max User Connections: 856',
+      large: 'Plan "D8s_v3". vCores: 8; Memory Size: 32Gb; Max Connections: 3438; Max User Connections: 3435',
+    }),
   },
 
   methods: {
@@ -191,6 +207,7 @@ export default {
     },
 
     async save() {
+      this.errorText = null;
       this.saving = true;
 
       try {
@@ -200,6 +217,12 @@ export default {
         this.$emit('saved');
         this.close();
       } catch (e) {
+        if (e.status === 422) {
+          this.errorText = 'An input error occurred. Please fill all required fields';
+        } else {
+          this.errorText = `#${e.status} ${e.message}`;
+        }
+
         this.emit({ name: 'snackbar:error', value: e });
       }
 
@@ -229,6 +252,7 @@ export default {
     },
 
     dialogOpened(v) {
+      if (!v) this.form = initialForm();
       if (this.value !== v) this.$emit('input', v);
     },
   },

@@ -35,6 +35,7 @@ describe('CreateEditDialog', () => {
   describe('#data', () => {
     it('should provide initial data', () => {
       expect(cmp.data()).toEqual({
+        errorText: null,
         dialogOpened: false,
         acceptTermsAndConds: false,
         saving: false,
@@ -76,7 +77,15 @@ describe('CreateEditDialog', () => {
       let setContext;
 
       beforeEach(() => {
-        setContext = (isEdit, acceptTermsAndConds, name, description, contact, region) => {
+        setContext = (
+          isEdit,
+          acceptTermsAndConds,
+          name,
+          description,
+          workload,
+          contact,
+          region,
+        ) => {
           context = {
             isEdit,
             acceptTermsAndConds,
@@ -84,6 +93,7 @@ describe('CreateEditDialog', () => {
             form: {
               name,
               description,
+              workload,
 
               tech_contact: {
                 id: contact,
@@ -98,26 +108,28 @@ describe('CreateEditDialog', () => {
       });
 
       it.each([
-        [false, true, 'name', 'description', 'contact', 'region', ['toBe', true]],
-        [false, false, null, null, null, null, ['toBe', false]],
-        [false, true, null, null, null, null, ['toBe', false]],
-        [false, true, 'name', null, null, null, ['toBe', false]],
-        [false, true, null, 'description', null, null, ['toBe', false]],
-        [false, true, 'name', 'description', 'contact', null, ['toBe', false]],
-        [false, false, 'name', 'description', 'contact', 'region', ['toBe', false]],
-        [false, false, null, 'description', 'contact', 'region', ['toBe', false]],
-        [false, false, null, null, null, 'region', ['toBe', false]],
+        [false, true, 'name', 'description', 'workload', 'contact', 'region', ['toBe', true]],
+        [false, false, null, null, null, null, null, ['toBe', false]],
+        [false, true, null, null, null, null, null, ['toBe', false]],
+        [false, true, 'name', null, null, null, null, ['toBe', false]],
+        [false, true, null, 'description', null, null, null, ['toBe', false]],
+        [false, true, null, null, 'workload', null, null, ['toBe', false]],
+        [false, true, 'name', 'description', 'workload', 'contact', null, ['toBe', false]],
+        [false, false, 'name', 'description', 'workload', 'contact', 'region', ['toBe', false]],
+        [false, false, null, 'description', 'workload', 'contact', 'region', ['toBe', false]],
+        [false, false, null, null, null, null, 'region', ['toBe', false]],
 
-        [true, false, 'name', 'description', 'contact', null, ['toBe', true]],
-        [true, false, null, null, 'contact', null, ['toBe', false]],
-        [true, false, null, null, null, null, ['toBe', false]],
-        [true, false, 'name', null, null, null, ['toBe', false]],
+        [true, false, 'name', 'description', 'workload', 'contact', null, ['toBe', true]],
+        [true, false, null, null, 'workload', 'contact', null, ['toBe', false]],
+        [true, false, null, null, null, 'contact', null, ['toBe', false]],
+        [true, false, null, null, null, null, null, ['toBe', false]],
+        [true, false, 'name', null, null, null, null, ['toBe', false]],
       ])(
-        'When isEdit=%j, acceptTermsAndConds=%j, name=%j, contact=%j, region=%j should "%j"',
-        (isEdit, acceptTermsAndConds, name, description, contact, region, spec) => {
+        'When isEdit=%j, acceptTermsAndConds=%j, name=%j, description=%j, workload=%j, contact=%j, region=%j should "%j"',
+        (isEdit, acceptTermsAndConds, name, description, workload, contact, region, spec) => {
           const [satisfies, condition] = spec;
 
-          setContext(isEdit, acceptTermsAndConds, name, description, contact, region);
+          setContext(isEdit, acceptTermsAndConds, name, description, workload, contact, region);
 
           expect(cmp.computed.allowSaving(context))[satisfies](condition);
         },

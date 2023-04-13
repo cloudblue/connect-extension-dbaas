@@ -20,6 +20,7 @@ describe('ActivateDialog', () => {
       expect(cmp.data()).toEqual({
         dialogOpened: false,
         saving: false,
+        errorText: null,
         form: {
           credentials: {
             name: '',
