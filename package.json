@@ -1,6 +1,6 @@
 {
   "name": "@cloudblueconnect/eaas-database-extension",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "On-demand provisioning of cloud-based database storages as a service.",
   "author": "Ingram Micro",
   "license": "Apache Software License 2.0",
