@@ -34,6 +34,7 @@ from dbaas.utils import is_admin_context
 class DB:
     COLLECTION = Collections.DB
     MAX_ID_GENERATION_RETRIES = 3
+    LIST_STEP_LENGTH = 20
 
     @classmethod
     async def list(cls, db: AsyncIOMotorDatabase, context: Context) -> list[dict]:
@@ -43,9 +44,14 @@ class DB:
         ).sort('events.created.at', pymongo.DESCENDING)
 
         results = []
-        for db_document in await cursor.to_list(length=20):
-            doc = cls._db_document_repr(db_document)
-            results.append(doc)
+
+        docs = await cursor.to_list(length=cls.LIST_STEP_LENGTH)
+        while docs:
+            for db_document in docs:
+                doc = cls._db_document_repr(db_document)
+                results.append(doc)
+
+            docs = await cursor.to_list(length=cls.LIST_STEP_LENGTH)
 
         return results
 
