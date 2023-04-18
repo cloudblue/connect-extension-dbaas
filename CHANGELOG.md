@@ -22,3 +22,4 @@
     * Added server errors handling
     * Added workload description and external link to docs
 * 0.3.2: Backend dependencies are bumped
+* 0.3.3: Removed limit of returned DB objects in DB List API

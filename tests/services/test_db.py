@@ -102,6 +102,18 @@ async def test_list_several_account_dbs(db, admin_context):
 
 
 @pytest.mark.asyncio
+async def test_list_number_of_dbs_gt_than_cursor_length(db):
+    account_id = 'PA-456'
+
+    dbs = DBFactory.create_batch(size=25, account_id=account_id)
+    await db[Collections.DB].insert_many(dbs)
+
+    results = await DB.list(db, Context(account_id=account_id))
+    assert len(results) == 25
+    assert len({r['id'] for r in results}) == 25
+
+
+@pytest.mark.asyncio
 async def test_retrieve_is_empty(db):
     result = await DB.retrieve('any', db, Context(account_id='VA-123-456'))
 
