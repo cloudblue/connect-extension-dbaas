@@ -41,7 +41,9 @@ div
     template(#name="{ item }")
       .detail-item
         a.detail-item__text(@click="$emit('item-clicked', item)") {{ item.name }}
-        .detail-item__assistive-text {{ item.id }}
+        .detail-item__assistive-text
+          span {{ item.id }}
+          span(v-if="installationContext.isAdmin")  • {{ item.owner.id }}
 
     template(#description="{ value }")
       .assistive-text {{ value }}
@@ -56,6 +58,10 @@ div
 </template>
 
 <script>
+import {
+  mapState,
+} from 'vuex';
+
 import {
   googleStorageBaseline,
 } from '@cloudblueconnect/material-svg/baseline';
@@ -94,6 +100,8 @@ export default {
   }),
 
   computed: {
+    ...mapState(['installationContext']),
+
     placeholderIcon: () => googleStorageBaseline,
 
     showPlaceholder: ({ list, loading }) => !loading && isNilOrEmpty(list),

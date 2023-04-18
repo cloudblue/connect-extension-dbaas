@@ -49,6 +49,7 @@ class DatabaseOutList(DatabaseInCreate):
     region: RefOut
     tech_contact: RefOut
     status: str
+    owner: RefIn
     case: Optional[RefIn]
     events: Optional[dict]
 

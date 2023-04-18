@@ -18,6 +18,7 @@ describe('ReconfDialog', () => {
   describe('#data', () => {
     it('should provide initial data', () => {
       expect(cmp.data()).toEqual({
+        errorText: null,
         dialogOpened: false,
         acceptTermsAndConds: false,
         saving: false,

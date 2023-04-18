@@ -23,3 +23,8 @@
     * Added workload description and external link to docs
 * 0.3.2: Backend dependencies are bumped
 * 0.3.3: Removed limit of returned DB objects in DB List API
+* 0.4.0: Enhancements
+  * DB Owner is shown in Databases API and Administrative UI
+  * Max number of allowed DB per account can now be set via `DB_MAX_ALLOWED_NUMBER_PER_ACCOUNT` env variable 
+  * Frontend changes:
+    * 400 and 422 server errors are better handled

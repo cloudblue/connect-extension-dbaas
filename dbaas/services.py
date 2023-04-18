@@ -88,6 +88,8 @@ class DB:
         if tech_contact['id'] != context.user_id:
             actor = await cls._get_actor(context, client)
 
+        await cls._validate_allowed_db_number_per_account(db, context, config)
+
         prepared_db_doc = cls._prepare_db_document(data, context, region_doc, tech_contact, actor)
         inserted_db_doc = await cls._create_db_document(
             prepared_db_doc, db, context, client, config,
@@ -304,6 +306,7 @@ class DB:
     @classmethod
     def _db_document_repr(cls, db_document: dict, config: dict = None) -> dict:
         document = copy(db_document)
+        document['owner'] = {'id': document.get('account_id')}
 
         case = cls._get_last_db_document_case(document)
         if case:
@@ -353,6 +356,25 @@ class DB:
             raise ValueError('Only active user can be a technical contact.')
 
         return tech_contact
+
+    @classmethod
+    async def _validate_allowed_db_number_per_account(
+        cls,
+        db: AsyncIOMotorDatabase,
+        context: Context,
+        config: dict,
+    ):
+        if is_admin_context(context):
+            return
+
+        max_allowed_number_of_db = int(config.get('DB_MAX_ALLOWED_NUMBER_PER_ACCOUNT', 50))
+
+        db_coll = db[cls.COLLECTION]
+        current_number_of_db = await db_coll.count_documents(cls._default_query(context))
+        if current_number_of_db + 1 > max_allowed_number_of_db:
+            raise ValueError(
+                f'Max allowed number of databases is reached: {max_allowed_number_of_db}.',
+            )
 
     @classmethod
     async def _get_actor(cls, context: Context, client: AsyncConnectClient) -> dict:
@@ -460,7 +482,7 @@ class DB:
 
     @staticmethod
     def _generate_id(config: dict) -> str:
-        id_random_length = config.get('DB_ID_RANDOM_LENGTH', 5)
+        id_random_length = int(config.get('DB_ID_RANDOM_LENGTH', 5))
         id_prefix = config.get('DB_ID_PREFIX', 'DBPG')
 
         random_part = ''.join(random.choice(string.digits) for _ in range(id_random_length))

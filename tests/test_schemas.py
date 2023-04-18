@@ -217,6 +217,7 @@ def test_database_out_list():
         tech_contact__name='user',
         cases=CaseFactory.create_batch(2),
         events={'happened': {'at': 1}},
+        account_id='VA-123',
     )
 
     assert jsonable_encoder(DatabaseOutList(**db)) == {
@@ -229,6 +230,7 @@ def test_database_out_list():
         'status': 'reviewing',
         'case': None,
         'events': {'happened': {'at': 1}},
+        'owner': {'id': 'VA-123'},
     }
 
 
@@ -250,6 +252,7 @@ def test_database_out_detail():
             'host': 'some',
             'password': 'qwerty',
         },
+        account_id='PA-123',
     )
 
     assert jsonable_encoder(DatabaseOutDetail(case=CaseFactory(id='CS-100'), **db)) == {
@@ -268,6 +271,7 @@ def test_database_out_detail():
             'password': 'qwerty',
             'name': None,
         },
+        'owner': {'id': 'PA-123'},
     }
 
 

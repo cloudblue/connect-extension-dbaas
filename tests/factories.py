@@ -53,6 +53,10 @@ class DBFactory(factory.DictFactory):
 
     account_id = factory.Sequence(lambda n: f'VA-{n:05}')
 
+    @factory.post_generation
+    def owner(obj, *a, **kw):
+        obj['owner'] = {'id': obj['account_id']}
+
 
 class InstallationFactory(factory.DictFactory):
     id = factory.Sequence(lambda n: f'EIN-{n:05}')

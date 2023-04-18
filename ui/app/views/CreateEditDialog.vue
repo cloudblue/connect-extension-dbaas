@@ -217,12 +217,7 @@ export default {
         this.$emit('saved');
         this.close();
       } catch (e) {
-        if (e.status === 422) {
-          this.errorText = 'An input error occurred. Please fill all required fields';
-        } else {
-          this.errorText = `#${e.status} ${e.message}`;
-        }
-
+        this.errorText = e.message;
         this.emit({ name: 'snackbar:error', value: e });
       }
 
@@ -235,6 +230,7 @@ export default {
       immediate: true,
       async handler(v) {
         if (v) {
+          this.errorText = null;
           if (this.item) this.form = clone(this.item);
 
           try {
