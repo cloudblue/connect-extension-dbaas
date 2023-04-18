@@ -62,19 +62,28 @@ async def test_list_no_account_dbs(db, admin_context):
     ),
 ))
 def test__db_document_repr(in_doc, out_doc):
-    assert DB._db_document_repr(in_doc) == out_doc
+    result = DB._db_document_repr(in_doc)
+    del result['owner']
+
+    assert result == out_doc
 
 
 @pytest.mark.parametrize('in_doc, out_doc', (
-    ({}, {}),
-    ({1: True, 'a': 'key'}, {1: True, 'a': 'key'}),
+    ({}, {'owner': {'id': None}}),
+    ({1: True, 'a': 'key'}, {1: True, 'a': 'key', 'owner': {'id': None}}),
     (
         {
             'status': DBStatus.ACTIVE,
             'credentials': b'gAAAAABkEdPYFZffrdrEU5_jwzsBO-GstLDA2IYs8uAN7jGyQ4KRKw_'
                            b'CoxytmSLMdTi_NQ49Oe15RWgVtkbEFM2PAZ4wQI9sLQ==',
+            'account_id': 'VA-123',
         },
-        {'status': DBStatus.ACTIVE, 'credentials': {'1': 1}},
+        {
+            'status': DBStatus.ACTIVE,
+            'credentials': {'1': 1},
+            'account_id': 'VA-123',
+            'owner': {'id': 'VA-123'},
+        },
     ),
 ))
 def test__db_document_repr_with_config(in_doc, out_doc, config):

@@ -304,6 +304,7 @@ class DB:
     @classmethod
     def _db_document_repr(cls, db_document: dict, config: dict = None) -> dict:
         document = copy(db_document)
+        document['owner'] = {'id': document.get('account_id')}
 
         case = cls._get_last_db_document_case(document)
         if case:

@@ -77,6 +77,10 @@ div
           .item-label Workload Type
           .item-value.capitalize {{ localItem.workload }}
 
+        .item-row(v-if="installationContext.isAdmin")
+          .item-label Owner ID
+          .item-value.capitalize {{ localItem.owner.id }}
+
         .divider._mt_24._mb_24
 
         .item-row
