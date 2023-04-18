@@ -116,10 +116,17 @@ async function request(
       data = responseData;
     }
 
+    let errorMsg = `Server responded with non-ok code: ${response.status}`;
+    if (response.status === 422) {
+      errorMsg = 'An input error occurred. Please fill all required fields';
+    } else if (response.status === 400 && 'message' in data) {
+      errorMsg = data.message;
+    }
+
     throw new ApiError(
       data,
       response,
-      `Server responded with non-ok code: ${response.status}`,
+      errorMsg,
     );
   }
 

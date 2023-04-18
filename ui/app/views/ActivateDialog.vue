@@ -141,12 +141,7 @@ export default {
         this.$emit('saved');
         this.close();
       } catch (e) {
-        if (e.status === 422) {
-          this.errorText = 'An input error occurred. Please fill all required fields';
-        } else {
-          this.errorText = `#${e.status} ${e.message}`;
-        }
-
+        this.errorText = e.message;
         this.emit({ name: 'snackbar:error', value: e });
       }
 
@@ -158,6 +153,8 @@ export default {
     value: {
       immediate: true,
       handler(v) {
+        this.errorText = null;
+
         const data = clone(this.item);
         if (!data?.credentials) data.credentials = initialForm().credentials;
         this.form = data;

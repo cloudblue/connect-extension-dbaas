@@ -268,6 +268,36 @@ async def test__get_actor_ok(async_client_mocker_factory, mocker):
     p.assert_called_once_with('PA-123', user['id'], 'client')
 
 
+@pytest.mark.asyncio
+async def test__validate_allowed_db_number_per_account_is_admin(admin_context):
+    assert await DB._validate_allowed_db_number_per_account('db', admin_context, 'config') is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('max_num, error', (
+    (0, 'Max allowed number of databases is reached: 0.'),
+    (1, 'Max allowed number of databases is reached: 1.'),
+))
+async def test__validate_allowed_db_number_per_account_exceeds_max(
+    db, common_context, max_num, error,
+):
+    account_id = 'VA-234'
+    common_context.account_id = account_id
+    await db[Collections.DB].insert_one({'id': 'DB-200', 'account_id': account_id})
+
+    config = {'DB_MAX_ALLOWED_NUMBER_PER_ACCOUNT': max_num}
+
+    with pytest.raises(ValueError) as e:
+        await DB._validate_allowed_db_number_per_account(db, common_context, config)
+
+    assert str(e.value) == error
+
+
+@pytest.mark.asyncio
+async def test__validate_allowed_db_number_per_account_ok(db, common_context, config):
+    assert await DB._validate_allowed_db_number_per_account(db, common_context, config) is None
+
+
 def test__prepare_db_document(mocker):
     data = {'name': 'DB-1'}
     context = Context(account_id='VA-123')
@@ -529,6 +559,10 @@ async def test_create_ok(mocker, context_uid, am_call_count, actor):
         'dbaas.services.DB._get_actor',
         AsyncMock(return_value=actor),
     )
+    vn_p = mocker.patch(
+        'dbaas.services.DB._validate_allowed_db_number_per_account',
+        AsyncMock(),
+    )
     pdd_p = mocker.patch('dbaas.services.DB._prepare_db_document', return_value='prepared_db_doc')
     cdd_p = mocker.patch(
         'dbaas.services.DB._create_db_document',
@@ -548,6 +582,7 @@ async def test_create_ok(mocker, context_uid, am_call_count, actor):
 
     gvrd_p.assert_called_once_with(data, 'db')
     gvtc_p.assert_called_once_with(data, context, 'client')
+    vn_p.assert_called_once_with('db', context, 'config')
     assert ga_p.call_count == am_call_count
     pdd_p.assert_called_once_with(
         data, context, 'region_doc', {'id': 'UR-123-456'}, actor,

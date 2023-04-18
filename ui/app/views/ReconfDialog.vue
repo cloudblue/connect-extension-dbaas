@@ -3,6 +3,7 @@ ez-dialog(
   v-model="dialogOpened",
   width="800",
   title="Request Reconfiguration",
+  :error-text="errorText",
 )
   ui-card(title="Type")
     .two-columns
@@ -106,6 +107,7 @@ export default {
   },
 
   data: () => ({
+    errorText: null,
     dialogOpened: false,
     acceptTermsAndConds: false,
     form: initialForm(),
@@ -138,6 +140,7 @@ export default {
         this.$emit('saved', item);
         this.close();
       } catch (e) {
+        this.errorText = e.message;
         this.emit({ name: 'snackbar:error', value: e });
         /* eslint-disable no-console */
         console.error(e);
@@ -151,6 +154,7 @@ export default {
     value: {
       immediate: true,
       handler(v) {
+        this.errorText = null;
         this.dialogOpened = v;
       },
     },
