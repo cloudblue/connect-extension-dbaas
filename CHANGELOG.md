@@ -28,3 +28,9 @@
   * Max number of allowed DB per account can now be set via `DB_MAX_ALLOWED_NUMBER_PER_ACCOUNT` env variable 
   * Frontend changes:
     * 400 and 422 server errors are better handled
+* 0.4.1: Frontend improvements
+  * Disabled editing of Technical Contact by administrator
+  * Trim credentials fields on input
+  * Fixed vertical scrolling
+  * Fixed radio buttons layout for Safari
+  * Improved reliability of several UI pieces

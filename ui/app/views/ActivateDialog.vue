@@ -10,24 +10,47 @@ ez-dialog(
       .detail-item-head.item-label._mb_8 Username
         sup.red._ml_4 *
       .detail-item__text
-        input(required, v-model="form.credentials.username", type="text", materialize)
+        input(
+          required,
+          v-model="form.credentials.username",
+          @input="form.credentials.username = form.credentials.username.trim()"
+          type="text",
+          materialize,
+        )
 
     .detail-item
       .detail-item-head.item-label._mb_8 Password
         sup.red._ml_4 *
       .detail-item__text
-        input(required, v-model="form.credentials.password", type="password" materialize)
+        input(
+          required,
+          v-model="form.credentials.password",
+          @input="form.credentials.password = form.credentials.password.trim()"
+          type="password",
+          materialize,
+        )
 
     .detail-item
       .detail-item-head.item-label._mb_8 Host
         sup.red._ml_4 *
       .detail-item__text
-        input(required, v-model="form.credentials.host", type="text", materialize)
+        input(
+          required,
+          v-model="form.credentials.host",
+          @input="form.credentials.host = form.credentials.host.trim()"
+          type="text",
+          materialize,
+        )
 
     .detail-item
       .detail-item-head.item-label._mb_8 DB Name
       .detail-item__text
-        input(v-model="form.credentials.name", type="text", materialize)
+        input(
+          v-model="form.credentials.name",
+          @input="form.credentials.name = form.credentials.name.trim()"
+          type="text",
+          materialize,
+        )
 
   ._mt_24
 
@@ -153,10 +176,11 @@ export default {
     value: {
       immediate: true,
       handler(v) {
+        if (!this.item) return;
         this.errorText = null;
 
         const data = clone(this.item);
-        if (!data?.credentials) data.credentials = initialForm().credentials;
+        if (!data.credentials) data.credentials = initialForm().credentials;
         this.form = data;
 
         this.dialogOpened = v;
