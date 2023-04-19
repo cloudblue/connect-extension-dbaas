@@ -50,8 +50,9 @@ export default {
   height: 64px;
   left: 0px;
   right: 0px;
-  background: $theme-controls-background;
+  background: #fcfcfc;
   border-bottom: 1px solid $theme-border-color;
+  z-index: 1;
 
   &__title {
     font-weight: 500;

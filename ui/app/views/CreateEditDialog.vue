@@ -59,10 +59,14 @@ ez-dialog(
       .detail-item-head.item-label._mb_8 User
         sup._ml_4.red *
       .detail-item__text
-        select(materialize, v-model="form.tech_contact.id")
+        select(
+          materialize,
+          v-model="form.tech_contact.id",
+          :disabled="isEdit && installationContext.isAdmin"
+        )
           option(disabled) Choose user
           option(
-            v-for="user in users",
+            v-for="user in (isEdit && installationContext.isAdmin ? [item.tech_contact] : users)",
             :value="user.id",
             :key="user.id",
           ) {{ user.name }} ({{ user.email }})
@@ -115,6 +119,7 @@ import {
 
 import {
   mapActions,
+  mapGetters,
 } from 'vuex';
 
 import {
@@ -171,6 +176,8 @@ export default {
   }),
 
   computed: {
+    ...mapGetters(['installationContext']),
+
     isEdit: ({ item }) => Boolean(item),
     allowSaving: ({ isEdit, acceptTermsAndConds, form }) => Boolean((
       isEdit

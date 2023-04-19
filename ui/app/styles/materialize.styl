@@ -27,6 +27,10 @@ input[type=text][materialize] {
     outline-width: 0;
     border-color: $accent;
   }
+
+  &:disabled {
+    border-style: dashed;
+  }
 }
 
 input[type=password][materialize] {
@@ -50,6 +54,10 @@ input[type=password][materialize] {
   &:focus-visible {
     outline-width: 0;
     border-color: $accent;
+  }
+
+  &:disabled {
+    border-style: dashed;
   }
 }
 
@@ -75,6 +83,10 @@ textarea[materialize] {
     outline-width: 0;
     border-color: $accent;
   }
+
+  &:disabled {
+    border-style: dashed;
+  }
 }
 
 input[type=radio][materialize] {
@@ -91,8 +103,7 @@ input[type=radio][materialize] {
   cursor: pointer;
 
   &:checked {
-    outline: solid 5.5px $accent !important;
-    outline-offset: -100px;
+    background: radial-gradient(circle, $accent 45%, rgba(255,255,255,0) 45%)
     border-color: $accent;
   }
 
@@ -145,7 +156,6 @@ label[materialize] {
   line-height: 1.2em;
 
   &[for] {
-
     cursor: pointer;
   }
 }
@@ -179,5 +189,9 @@ select[materialize] {
   &:focus-visible {
     outline-width: 0;
     border-color: $accent;
+  }
+
+  &:disabled {
+    border-style: dashed;
   }
 }

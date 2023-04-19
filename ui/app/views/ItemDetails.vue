@@ -177,7 +177,7 @@ div
 <script>
 import {
   mapActions,
-  mapState,
+  mapGetters,
 } from 'vuex';
 
 import {
@@ -260,7 +260,7 @@ export default {
   }),
 
   computed: {
-    ...mapState(['installationContext']),
+    ...mapGetters(['installationContext']),
 
     databaseUrl: ({ localItem }) => {
       if (!localItem?.credentials) return { showPassword: '–', hidePassword: '–' };

@@ -43,7 +43,7 @@ div
         a.detail-item__text(@click="$emit('item-clicked', item)") {{ item.name }}
         .detail-item__assistive-text
           span {{ item.id }}
-          span(v-if="installationContext.isAdmin")  • {{ item.owner.id }}
+          span(v-if="installationContext.isAdmin && item.owner")  • {{ item.owner.id }}
 
     template(#description="{ value }")
       .assistive-text {{ value }}
