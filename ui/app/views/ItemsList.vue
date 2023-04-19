@@ -59,7 +59,7 @@ div
 
 <script>
 import {
-  mapState,
+  mapGetters,
 } from 'vuex';
 
 import {
@@ -100,7 +100,7 @@ export default {
   }),
 
   computed: {
-    ...mapState(['installationContext']),
+    ...mapGetters(['installationContext']),
 
     placeholderIcon: () => googleStorageBaseline,
 
