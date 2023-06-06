@@ -34,3 +34,4 @@
   * Fixed vertical scrolling
   * Fixed radio buttons layout for Safari
   * Improved reliability of several UI pieces
+* 0.4.2: Backend dependencies are bumped and GitHub UI unit testing is fixed
