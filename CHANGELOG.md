@@ -35,3 +35,4 @@
   * Fixed radio buttons layout for Safari
   * Improved reliability of several UI pieces
 * 0.4.2: Backend dependencies are bumped and GitHub UI unit testing is fixed
+* 0.4.3: Backend dependencies are bumped
