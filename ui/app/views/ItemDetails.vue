@@ -85,11 +85,21 @@ div
 
         .item-row
           .item-label Created
-          .item-value {{ localItem.events.created.at | ddmmyyyy }}
+          .item-value
+            .detail-item
+              .detail-item__text {{ localItem.events.created.at | ddmmyyyy_HHMM }}
+              .detail-item__assistive-text(
+                v-if="localItem.events?.created?.by"
+              ) {{ localItem.events?.created?.by.name || localItem.events?.created?.by.id }}
 
         .item-row(v-if="localItem.events.updated")
           .item-label Updated
-          .item-value {{ localItem.events.updated.at | ddmmyyyy }}
+          .item-value
+            .detail-item
+              .detail-item__text {{ localItem.events.updated.at | ddmmyyyy_HHMM }}
+              .detail-item__assistive-text(
+                v-if="localItem.events?.updated?.by"
+              ) {{ localItem.events?.updated?.by.name || localItem.events?.updated?.by.id }}
 
       ui-card(title="Technical Contact")
         .detail-item
@@ -319,13 +329,15 @@ export default {
   },
 
   filters: {
-    ddmmyyyy: (dateString) => {
+    ddmmyyyy_HHMM: (dateString) => {
       const date = new Date(dateString);
       const dd = norm(date.getUTCDate());
       const mm = norm(date.getUTCMonth() + 1);
       const yyyy = date.getUTCFullYear();
+      const HH = norm(date.getUTCHours());
+      const MM = norm(date.getUTCMinutes());
 
-      return `${dd}/${mm}/${yyyy}`;
+      return `${dd}/${mm}/${yyyy} ${HH}:${MM}`;
     },
   },
 

@@ -110,12 +110,12 @@ describe('ItemDetails', () => {
   });
 
   describe('#filters', () => {
-    describe('#ddmmyyyy', () => {
+    describe('#ddmmyyyy_HHMM', () => {
       it.each([
-        ['October 19, 1975 23:15:30 GMT+11:00', '19/10/1975'],
-        ['January 3, 2020 23:15:30 GMT+11:00', '03/01/2020'],
+        ['October 19, 1975 23:15:30 GMT+11:00', '19/10/1975 12:15'],
+        ['January 3, 2020 00:01:30 GMT-10:00', '03/01/2020 10:01'],
       ])('should format %j as %j', (d, f) => {
-        expect(cmp.filters.ddmmyyyy(new Date(d))).toBe(f);
+        expect(cmp.filters.ddmmyyyy_HHMM(new Date(d))).toBe(f);
       });
     });
   });
