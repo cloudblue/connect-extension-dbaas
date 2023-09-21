@@ -1,47 +1,26 @@
 <template lang="pug">
 ez-dialog(
   v-model="dialogOpened",
-  width="800",
+  width="580",
   title="Request Reconfiguration",
   :error-text="errorText",
 )
-  ui-card(title="Type")
-    .two-columns
-      .choice-card(
-        :class="{ 'choice-card__chosen': form.subject === 'regenerate_access' }",
-        @click="form.subject = 'regenerate_access'",
-      )
-        input#access(type="radio" v-model="form.subject" value="regenerate_access", materialize)
-        label._ml_8(for="regenerate_access", materialize) Regenerate Access Information
+  .detail-item
+    .detail-item-head.item-label._mb_12 Type
+    .detail-item__text.type-radiogroup
+      input#regen(type="radio" v-model="form.subject" value="regenerate_access", materialize)
+      label(for="regen", materialize) Regenerate Access Information
+      input#change(type="radio" v-model="form.subject" value="change_sizing", materialize)
+      label(for="change", materialize) Change Sizing
+      input#drop(type="radio" v-model="form.subject" value="drop_db", materialize)
+      label(for="drop", materialize) No longer need this database
+      input#other(type="radio" v-model="form.subject" value="other", materialize)
+      label(for="other", materialize) Other
 
-      .choice-card(
-        :class="{ 'choice-card__chosen': form.subject === 'change_sizing' }",
-        @click="form.subject = 'change_sizing'",
-      )
-        input#sizing(type="radio" v-model="form.subject" value="change_sizing", materialize)
-        label._ml_8(for="change_sizing", materialize) Change Sizing
-
-      .choice-card(
-        :class="{ 'choice-card__chosen': form.subject === 'drop_db' }",
-        @click="form.subject = 'drop_db'",
-      )
-        input#drop._ml_24(type="radio" v-model="form.subject" value="drop_db", materialize)
-        label._ml_8(for="drop_db", materialize) No longer need this database
-
-      .choice-card(
-        :class="{ 'choice-card__chosen': form.subject === 'other' }",
-        @click="form.subject = 'other'",
-      )
-        input#other._ml_24(type="radio" v-model="form.subject" value="other", materialize)
-        label._ml_8(for="other", materialize) Other
-
-  ._mt_24
-
-  ui-card(title="Additional Information")
-    .detail-item
-      .detail-item-head.item-label._mb_8 Please describe details of your request
-      .detail-item__text
-        textarea(v-model="form.description", materialize)
+  .detail-item
+    .detail-item-head.item-label._mb_8 Please Describe Details Of Your Request
+    .detail-item__text
+      textarea(v-model="form.description", materialize)
 
   template(#actions="")
     c-button(
@@ -171,21 +150,11 @@ export default {
 </style>
 
 <style lang="stylus" scoped>
-@import "~styles/common"
-
-.choice-card {
-  display: flex;
-  padding: 24px;
-  box-sizing: border-box;
-  align-items: center;
-  background-color: $white-smoke;
-  border-radius: 2px;
-  margin-bottom: 16px;
-  cursor: pointer;
-
-  &__chosen {
-    background-color: _rgba($accent-rgb, .15);
-    outline: 1px solid $accent;
+  .type-radiogroup {
+    display: grid;
+    grid-row-gap: 12px;
+    grid-column-gap: 8px;
+    align-items: center;
+    grid-template-columns: min-content 1fr;
   }
-}
 </style>

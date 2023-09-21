@@ -39,3 +39,7 @@
 * 0.4.4:
   * Better representation of DB events (created, updated) in UI
   * Dependencies are bumped
+* 0.4.5:
+  * Simplification and adjustment of UI dialogs: create, update and reconfigure
+  * Other minor UI changes
+  * Dependencies are bumped

@@ -1,7 +1,7 @@
 <template lang="pug">
 ez-dialog(
   v-model="dialogOpened",
-  width="400",
+  width="580",
   title="Delete database",
 )
   span Are you sure?

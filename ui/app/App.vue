@@ -52,5 +52,9 @@ export default {
 
 <style lang="stylus">
 @import '~styles/app.styl';
+
+.detail-item-head {
+  font-weight: 500;
+}
 </style>
 
