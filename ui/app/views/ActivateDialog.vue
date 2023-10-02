@@ -1,7 +1,7 @@
 <template lang="pug">
 ez-dialog(
   v-model="dialogOpened",
-  width="800",
+  width="580",
   title="Activate database",
   :error-text="errorText",
 )

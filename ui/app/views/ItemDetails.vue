@@ -101,9 +101,9 @@ div
                 v-if="localItem.events?.updated?.by"
               ) {{ localItem.events?.updated?.by.name || localItem.events?.updated?.by.id }}
 
-      ui-card(title="Technical Contact")
-        .detail-item
-          .detail-item-head.item-label._mb_8 User
+      ui-card(title="Additional Info")
+        .detail-item._mt_0
+          .detail-item-head.item-label._mb_8 Technical contact
           .detail-item__text {{ localItem.tech_contact.name }}
           .detail-item__assistive-text {{ localItem.tech_contact.email }}
 
@@ -111,7 +111,7 @@ div
           .detail-item-head.item-label._mb_8 Planned database workload
           .detail-item__text {{ localItem.description }}
 
-    ui-card._mt_24(title="Access information", v-if="localItem && localItem.credentials")
+    ui-card._mt_24(title="Access Information", v-if="localItem && localItem.credentials")
       .item-row
         .item-label URL
         .item-value {{ hidePassword ? databaseUrl.hidePassword : databaseUrl.showPassword }}
