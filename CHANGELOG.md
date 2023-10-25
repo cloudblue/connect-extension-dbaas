@@ -43,3 +43,8 @@
   * Simplification and adjustment of UI dialogs: create, update and reconfigure
   * Other minor UI changes
   * Dependencies are bumped
+* 0.4.6:
+  * Updated frontend dependencies
+  * Updated required node version to v20
+  * Updated frontend test action node version to v20
+  * Updated ui/config.yml's title
