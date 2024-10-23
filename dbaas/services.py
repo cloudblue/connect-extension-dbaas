@@ -161,21 +161,19 @@ class DB:
         updated_events['reconfigured'] = cls._prepare_event(actor)
         updates['events'] = updated_events
 
-        if not is_admin_context(context):
-            installation = await ConnectInstallation.retrieve(context.installation_id, client)
+        installation = await ConnectInstallation.retrieve(context.installation_id, client)
+        description = data.get('details') or '-'
+        helpdesk_case = await ConnectHelpdeskCase.create_from_db_document(
+            db_document,
+            action=data['action'],
+            description=description,
+            installation=installation,
+            client=client,
+        )
 
-            description = data.get('details') or '-'
-            helpdesk_case = await ConnectHelpdeskCase.create_from_db_document(
-                db_document,
-                action=data['action'],
-                description=description,
-                installation=installation,
-                client=client,
-            )
-
-            cases = updated_db_document.get('cases', [])
-            cases.append(cls._prepare_helpdesk_case(helpdesk_case))
-            updates['cases'] = cases
+        cases = updated_db_document.get('cases', [])
+        cases.append(cls._prepare_helpdesk_case(helpdesk_case))
+        updates['cases'] = cases
 
         db_coll = db[cls.COLLECTION]
         await db_coll.update_one(
@@ -412,19 +410,13 @@ class DB:
         client: AsyncConnectClient,
         config: dict,
     ) -> dict:
-        is_admin_ctx = is_admin_context(context)
-        installation = None
-        if not is_admin_ctx:
-            installation = await ConnectInstallation.retrieve(context.installation_id, client)
+        installation = await ConnectInstallation.retrieve(context.installation_id, client)
 
         async with await db.client.start_session() as db_session:
             async with db_session.start_transaction():
                 db_document = await cls._create_db_document_in_db(
                     db_document, db_session, config, client.logger,
                 )
-
-                if is_admin_ctx:
-                    return db_document
 
                 helpdesk_case = await ConnectHelpdeskCase.create_from_db_document(
                     db_document,
