@@ -431,35 +431,6 @@ def test__generate_id_with_changed_config():
 
 
 @pytest.mark.asyncio
-async def test__create_db_document_admin_document_created(db, admin_context, config, mocker):
-    context = admin_context
-    context.installation_id = 'EIN-123'
-    data = {'name': 'test'}
-    installation_p = mocker.patch('dbaas.services.ConnectInstallation.retrieve')
-    case_p = mocker.patch('dbaas.services.ConnectHelpdeskCase.create_from_db_document')
-    db_p = mocker.patch('dbaas.services.DB._create_db_document_in_db', return_value={'id': 'DB'})
-    client = mocker.MagicMock()
-
-    result = await DB._create_db_document(
-        data,
-        db,
-        context,
-        client=client,
-        config=config,
-    )
-
-    assert result == {'id': 'DB'}
-
-    installation_p.assert_not_called()
-    case_p.assert_not_called()
-
-    db_p_call = db_p.call_args[0]
-    assert db_p_call[0] == data
-    assert db_p_call[2] == config
-    assert db_p_call[3] == client.logger
-
-
-@pytest.mark.asyncio
 async def test__create_db_document_common_document_created(db, config, mocker):
     installation = InstallationFactory()
     context = Context(installation_id=installation['id'])
@@ -526,6 +497,14 @@ async def test__create_db_document_error(db, error_cls, admin_context, mocker, c
     def raise_err(*a):
         raise error_cls('err')
 
+    mocker.patch(
+        'dbaas.services.ConnectInstallation.retrieve',
+        AsyncMock(),
+    )
+    mocker.patch(
+        'dbaas.services.ConnectHelpdeskCase.create_from_db_document',
+        AsyncMock(),
+    )
     mocker.patch('dbaas.services.DB._create_db_document_in_db', side_effect=raise_err)
 
     with pytest.raises(error_cls):
@@ -765,48 +744,6 @@ async def test_reconfigure_wrong_db_status(status, mocker):
     assert str(e.value) == 'Only active DB can be reconfigured.'
 
     actor_p.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_reconfigure_by_admin(mocker, admin_context, db):
-    db_document = DBFactory(status=DBStatus.ACTIVE)
-    actor = UserFactory(id='UR-456', name='456')
-    data = {'action': DBAction.UPDATE}
-    reconfigured_event = {
-        'at': 'DT',
-        'by': {
-            'id': 'UR-456',
-            'name': '456',
-        },
-    }
-    await db[Collections.DB].insert_one(db_document)
-
-    actor_p = mocker.patch('dbaas.services.DB._get_actor', AsyncMock(return_value=actor))
-    installation_p = mocker.patch('dbaas.services.ConnectInstallation.retrieve')
-    case_p = mocker.patch('dbaas.services.ConnectHelpdeskCase.create_from_db_document')
-    repr_p = mocker.patch('dbaas.services.DB._db_document_repr', return_value='admin')
-    dt = mocker.patch('dbaas.services.datetime', wraps=datetime)
-    dt.now.return_value = 'DT'
-
-    result = await DB.reconfigure(db_document, data, db, admin_context, 'client')
-    db_document_from_db = await db[Collections.DB].find_one({'id': db_document['id']})
-
-    assert result == 'admin'
-
-    actor_p.assert_called_once_with(admin_context, 'client')
-    installation_p.assert_not_called()
-    case_p.assert_not_called()
-
-    db_document['status'] = DBStatus.RECONFIGURING
-    db_document['events'].update(reconfigured_event)
-    repr_p.assert_called_once_with(db_document)
-    assert db_document_from_db['status'] == DBStatus.RECONFIGURING
-    assert db_document_from_db['cases'] == []
-    assert db_document_from_db['events']['created']
-    assert db_document_from_db['events']['reconfigured'] == reconfigured_event
-
-    count_docs = await db[Collections.DB].count_documents({})
-    assert count_docs == 1
 
 
 @pytest.mark.asyncio
